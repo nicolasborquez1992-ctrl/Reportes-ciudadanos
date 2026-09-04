@@ -50,11 +50,10 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
         return False, "No se registró un correo válido para este reporte."
 
     # Configuración de servidor SMTP (Ejemplo con Gmail)
-    # Reemplaza con tus credenciales reales en producción:
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
-    SENDER_EMAIL = "contacto.vallenar.resuelve@gmail.com"  # Correo corporativo/municipal
-    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"                # Contraseña de aplicación
+    SENDER_EMAIL = "contacto.vallenar.resuelve@gmail.com"
+    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"
 
     asunto = f"🔔 Actualización de Reporte #{id_reporte} - Ilustre Municipalidad de Vallenar"
     
@@ -81,7 +80,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
-        # Descomentar para conectar en producción con un servidor SMTP real:
+        # Descomentar para conectar en producción con servidor SMTP real:
         # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         # server.starttls()
         # server.login(SENDER_EMAIL, SENDER_PASSWORD)
@@ -92,7 +91,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
         return False, str(e)
 
 # ----------------------------------------------------
-# Módulo 2: Generador de Informes PDF para la Alcaldía / Concejo
+# Módulo 2: Generador de Informes PDF para Autoridades
 # ----------------------------------------------------
 def generar_pdf_gestion(df_data):
     """
@@ -129,13 +128,13 @@ def generar_pdf_gestion(df_data):
         spaceAfter=15
     )
 
-    # 1. Encabezado Institucional
+    # Encabezado
     story.append(Paragraph("ILUSTRE MUNICIPALIDAD DE VALLENAR", title_style))
     story.append(Paragraph("<b>INFORME DE GESTIÓN DE INCIDENCIAS URBANAS</b>", subtitle_style))
     story.append(Paragraph(f"<b>Fecha de Emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
     story.append(Spacer(1, 10))
 
-    # 2. Resumen Ejecutivo de Métricas
+    # Resumen Ejecutivo
     total = len(df_data)
     pendientes = len(df_data[df_data["estado"] == "Pendiente"])
     proceso = len(df_data[df_data["estado"] == "En Proceso"])
@@ -151,7 +150,7 @@ def generar_pdf_gestion(df_data):
     story.append(Paragraph(resumen_text, styles['Normal']))
     story.append(Spacer(1, 15))
 
-    # 3. Tabla Consolidada de Datos
+    # Tabla Consolidada
     story.append(Paragraph("<b>Detalle General de Reportes:</b>", styles['Normal']))
     story.append(Spacer(1, 8))
 
@@ -239,7 +238,7 @@ if "incidencias" not in st.session_state:
     ])
 
 # ----------------------------------------------------
-# Formulario Lateral de Registro (Con GPS Automático)
+# Formulario Lateral de Registro (Enlazado al GPS)
 # ----------------------------------------------------
 st.sidebar.header("📝 Nuevo Reporte Ciudadano")
 sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
@@ -252,15 +251,16 @@ cat_input = st.sidebar.selectbox(
 
 prioridad_input = st.sidebar.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
 
-# Captura automática de ubicación GPS en segundo plano
+# Captura de geolocalización del dispositivo
 location = get_geolocation()
 
 if location and "coords" in location:
     lat_input = float(location["coords"]["latitude"])
     lon_input = float(location["coords"]["longitude"])
-    st.sidebar.success("📍 Ubicación detectada automáticamente")
+    st.sidebar.success(f"📍 GPS Detectado: {lat_input:.4f}, {lon_input:.4f}")
 else:
     lat_input, lon_input = LAT_VALLENAR, LON_VALLENAR
+    st.sidebar.info("📍 Usando ubicación central de Vallenar")
 
 st.sidebar.subheader("📷 Detalles y Notificación")
 comentario_input = st.sidebar.text_area("Descripción detallada:")
@@ -273,6 +273,7 @@ if st.sidebar.button("🚀 Ingresar Reporte", use_container_width=True):
     else:
         imagen_guardada = Image.open(foto_input) if foto_input is not None else None
         nuevo_id = len(st.session_state.incidencias) + 1
+        
         nueva_fila = pd.DataFrame([{
             "id": nuevo_id,
             "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -287,8 +288,10 @@ if st.sidebar.button("🚀 Ingresar Reporte", use_container_width=True):
             "obs_municipal": "En espera de revisión por el departamento correspondiente.",
             "imagen": imagen_guardada
         }])
+        
         st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
         st.sidebar.success(f"¡Reporte #{nuevo_id} ingresado correctamente!")
+        st.rerun()
 
 # ----------------------------------------------------
 # Panel Principal: Métricas y Filtros
@@ -318,23 +321,34 @@ if filtro_estado: df_filtrado = df_filtrado[df_filtrado["estado"].isin(filtro_es
 if filtro_prioridad: df_filtrado = df_filtrado[df_filtrado["prioridad"].isin(filtro_prioridad)]
 
 # ----------------------------------------------------
-# Visualización: Mapa Interactivo y Gráficos
+# Visualización: Mapa Interactivo Georreferenciado
 # ----------------------------------------------------
 col_left, col_right = st.columns([2, 1])
 
 with col_left:
     st.subheader(f"🗺️ Mapa Georreferenciado ({len(df_filtrado)} incidencias)")
-    m = folium.Map(location=[LAT_VALLENAR, LON_VALLENAR], zoom_start=14)
     
+    # Se ubica el centro del mapa dinámicamente en el último reporte guardado o Vallenar centro
+    centro_lat = float(df_filtrado["lat"].iloc[-1]) if len(df_filtrado) > 0 else LAT_VALLENAR
+    centro_lon = float(df_filtrado["lon"].iloc[-1]) if len(df_filtrado) > 0 else LON_VALLENAR
+    
+    m = folium.Map(location=[centro_lat, centro_lon], zoom_start=14)
+    
+    # Se colocan los marcadores en las coordenadas exactas de cada reporte
     for _, row in df_filtrado.iterrows():
-        popup_html = f"<b>Reporte #{row['id']}</b><br>Sector: {row['sector']}<br>Estado: {row['estado']}"
+        popup_html = f"""
+        <b>Reporte #{row['id']}</b><br>
+        <b>Categoría:</b> {row['categoria']}<br>
+        <b>Sector:</b> {row['sector']}<br>
+        <b>Estado:</b> {row['estado']}
+        """
         folium.Marker(
-            location=[row["lat"], row["lon"]],
-            popup=folium.Popup(popup_html, max_width=200),
+            location=[float(row["lat"]), float(row["lon"])],
+            popup=folium.Popup(popup_html, max_width=250),
             tooltip=f"#{row['id']} - {row['categoria']}"
         ).add_to(m)
         
-    st_folium(m, width=800, height=450)
+    st_folium(m, width=800, height=450, key="mapa_vallenar")
 
 with col_right:
     st.subheader("📊 Distribución por Sector")
@@ -369,7 +383,6 @@ with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informe
             st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
             st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
             
-            # Enviar notificación por correo si cambia a 'En Proceso' o 'Resuelto'
             correo_vecino = df.loc[idx, "contacto"]
             if nuevo_estado in ["En Proceso", "Resuelto"] and correo_vecino != "No especificado":
                 exito, msg = enviar_correo_notificacion(
@@ -390,7 +403,6 @@ with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informe
     st.markdown("---")
     st.subheader("📄 Reportes de Gestión para Autoridades")
     
-    # Generar Buffer del PDF
     pdf_bytes = generar_pdf_gestion(df)
     
     col_pdf1, col_pdf2 = st.columns([1, 2])
