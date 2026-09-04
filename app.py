@@ -14,6 +14,7 @@ st.set_page_config(
     page_icon="🏙️",
     layout="wide"
 )
+
 # Estilo personalizado para insignias y fuentes
 st.markdown("""
     <style>
@@ -53,7 +54,9 @@ col_logo, col_texto = st.columns([1, 5])
 
 with col_logo:
     st.image(
-        "https://raw.githubusercontent.com/nicolasborquez1992-ctrl/Reportes-ciudadanos/main/escudo.png"
+        "https://raw.githubusercontent.com/nicolasborquez1992-ctrl/Reportes-ciudadanos/main/escudo.png",
+        width=100
+    )
 
 with col_texto:
     st.markdown("""
@@ -277,7 +280,7 @@ footer_col1, footer_col2, footer_col3 = st.columns([1, 2, 1])
 
 with footer_col2:
     st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Escudo_de_Vallenar.svg/1200px-Escudo_de_Vallenar.svg.png", 
+        "https://raw.githubusercontent.com/nicolasborquez1992-ctrl/Reportes-ciudadanos/main/escudo.png", 
         width=90
     )
     st.markdown(
