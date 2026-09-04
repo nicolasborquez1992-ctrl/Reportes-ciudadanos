@@ -10,7 +10,48 @@ from PIL import Image
 # Configuración Inicial de la Aplicación
 # ----------------------------------------------------
 st.set_page_config(
+    page_title="Vallenar Resuelve - Reportes Urbanos",[12:47, 4/9/2026] Nicolás Bórquez: import streamlit as st
+import pandas as pd
+import folium
+from streamlit_folium import st_folium
+import plotly.express as px
+from datetime import datetime
+from PIL import Image
+
+# ----------------------------------------------------
+# Configuración Inicial
+# ----------------------------------------------------
+st.set_page_config(
     page_title="Vallenar Resuelve - Reportes Urbanos",
+    page_icon="🏙️",
+    layout="wide"
+)
+
+# Logo oficial de Vallenar en el centro
+col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+with col_logo2:
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Escudo_de_Vallenar.svg/1200px-Escudo_de_Vallenar.svg.png", 
+        width=140
+    )
+
+st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🏙️…
+[12:50, 4/9/2026] Nicolás Bórquez: # ----------------------------------------------------
+# Encabezado con Logo + Texto alineados
+# ----------------------------------------------------
+col_logo, col_titulo = st.columns([1, 6])
+
+with col_logo:
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Escudo_de_Vallenar.svg/1200px-Escudo_de_Vallenar.svg.png", 
+        width=75
+    )
+
+with col_titulo:
+    st.title("Vallenar Resuelve - Plataforma Integral de Incidencias Urbanas")
+
+st.write("Sistema Comunitario de Reportes, Ciencia Ciudadana y Seguimiento Territorial en la Comuna de Vallenar (Región de Atacama).")
+st.markdown("---")
     page_icon="🏙️",
     layout="wide"
 )
