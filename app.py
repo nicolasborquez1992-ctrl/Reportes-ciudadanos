@@ -287,10 +287,6 @@ with col_right:
     if len(df_filtrado) > 0:
         fig_sector = px.pie(df_filtrado, names="sector", title="Incidencias por Sector", hole=0.35)
         st.plotly_chart(fig_sector, use_container_width=True)
-        
-        fig_cat = px.bar(df_filtrado, x="categoria", title="Tipos de Incidencias", color="categoria")
-        fig_cat.update_layout(showlegend=False)
-        st.plotly_chart(fig_cat, use_container_width=True)
     else:
         st.info("No hay datos para mostrar con los filtros seleccionados.")
 
