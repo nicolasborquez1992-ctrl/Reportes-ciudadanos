@@ -170,7 +170,7 @@ if "incidencias" not in st.session_state:
         }
     ])
 
-sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Altos del valle", "Hda compañia", "Hda ventanas", "sector cavancha", "Hda ventanas", "Hda buena esperanza", "Vista Alegre", "Las Pircas", "Los Regidores", "San Ambrosio", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
 # Encabezado Principal con Frase
