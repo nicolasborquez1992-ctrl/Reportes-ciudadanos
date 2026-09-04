@@ -26,12 +26,17 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Personalizados
+# Estilos CSS Personalizados (Traduce y oculta elementos en inglés de la interfaz)
 st.markdown("""
     <style>
     .main-title { font-size: 2.2rem; font-weight: 800; color: #1E3A8A; margin: 0; }
     .sub-title { font-size: 1.05rem; color: #4B5563; margin-top: 5px; }
     .badge-vallenar { background-color: #1E3A8A; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    
+    /* Ocultar el botón superior 'Share' de Streamlit */
+    header[data-testid="stHeader"] {
+        visibility: hidden;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -49,7 +54,6 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     if not destinatario or "@" not in destinatario or destinatario == "No especificado":
         return False, "No se registró un correo válido para este reporte."
 
-    # Configuración de servidor SMTP (Ejemplo con Gmail)
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SENDER_EMAIL = "contacto.vallenar.resuelve@gmail.com"
@@ -80,7 +84,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
-        # Descomentar para conectar en producción con servidor SMTP real:
+        # Servidor SMTP (descomentar en producción):
         # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         # server.starttls()
         # server.login(SENDER_EMAIL, SENDER_PASSWORD)
@@ -95,7 +99,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
 # ----------------------------------------------------
 def generar_pdf_gestion(df_data):
     """
-    Genera un archivo PDF con estructura institucional, métricas y tabla consolidada.
+    Genera un archivo PDF institucional con métricas e inventario consolidado.
     """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -128,7 +132,7 @@ def generar_pdf_gestion(df_data):
         spaceAfter=15
     )
 
-    # Encabezado
+    # Encabezado institucional
     story.append(Paragraph("ILUSTRE MUNICIPALIDAD DE VALLENAR", title_style))
     story.append(Paragraph("<b>INFORME DE GESTIÓN DE INCIDENCIAS URBANAS</b>", subtitle_style))
     story.append(Paragraph(f"<b>Fecha de Emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
@@ -182,7 +186,7 @@ def generar_pdf_gestion(df_data):
     return buffer
 
 # ----------------------------------------------------
-# Encabezado de la Aplicación Web
+# Encabezado Web
 # ----------------------------------------------------
 col_logo, col_texto = st.columns([1, 5])
 with col_logo:
@@ -203,7 +207,7 @@ with col_texto:
 st.markdown("---")
 
 # ----------------------------------------------------
-# Inicialización de la Base de Datos Local
+# Inicialización de Datos Local
 # ----------------------------------------------------
 if "incidencias" not in st.session_state:
     st.session_state.incidencias = pd.DataFrame([
@@ -238,10 +242,11 @@ if "incidencias" not in st.session_state:
     ])
 
 # ----------------------------------------------------
-# Formulario Lateral de Registro (Enlazado al GPS)
+# Formulario Lateral de Registro
 # ----------------------------------------------------
 st.sidebar.header("📝 Nuevo Reporte Ciudadano")
 sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+
 sector_input = st.sidebar.selectbox("Sector:", sectores_vallenar)
 
 cat_input = st.sidebar.selectbox(
@@ -251,7 +256,7 @@ cat_input = st.sidebar.selectbox(
 
 prioridad_input = st.sidebar.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
 
-# Captura de geolocalización del dispositivo
+# Captura de geolocalización GPS
 location = get_geolocation()
 
 if location and "coords" in location:
@@ -290,7 +295,7 @@ if st.sidebar.button("🚀 Ingresar Reporte", use_container_width=True):
         }])
         
         st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
-        st.sidebar.success(f"¡Reporte #{nuevo_id} ingresado correctamente!")
+        st.sidebar.success(f"¡Reporte #{nuevo_id} ingresado y georreferenciado!")
         st.rerun()
 
 # ----------------------------------------------------
@@ -308,12 +313,30 @@ st.markdown("---")
 
 st.subheader("🔍 Filtros de Búsqueda")
 f_col1, f_col2, f_col3 = st.columns(3)
+
 with f_col1:
-    filtro_sector = st.multiselect("Sector:", options=sectores_vallenar, default=[])
+    filtro_sector = st.multiselect(
+        "Sector:", 
+        options=sectores_vallenar, 
+        default=[],
+        placeholder="Seleccionar opciones..."
+    )
+
 with f_col2:
-    filtro_estado = st.multiselect("Estado:", options=["Pendiente", "En Proceso", "Resuelto"], default=[])
+    filtro_estado = st.multiselect(
+        "Estado:", 
+        options=["Pendiente", "En Proceso", "Resuelto"], 
+        default=[],
+        placeholder="Seleccionar opciones..."
+    )
+
 with f_col3:
-    filtro_prioridad = st.multiselect("Urgencia:", options=["Baja", "Media", "Alta", "Crítica"], default=[])
+    filtro_prioridad = st.multiselect(
+        "Urgencia:", 
+        options=["Baja", "Media", "Alta", "Crítica"], 
+        default=[],
+        placeholder="Seleccionar opciones..."
+    )
 
 df_filtrado = df.copy()
 if filtro_sector: df_filtrado = df_filtrado[df_filtrado["sector"].isin(filtro_sector)]
@@ -328,13 +351,11 @@ col_left, col_right = st.columns([2, 1])
 with col_left:
     st.subheader(f"🗺️ Mapa Georreferenciado ({len(df_filtrado)} incidencias)")
     
-    # Se ubica el centro del mapa dinámicamente en el último reporte guardado o Vallenar centro
     centro_lat = float(df_filtrado["lat"].iloc[-1]) if len(df_filtrado) > 0 else LAT_VALLENAR
     centro_lon = float(df_filtrado["lon"].iloc[-1]) if len(df_filtrado) > 0 else LON_VALLENAR
     
     m = folium.Map(location=[centro_lat, centro_lon], zoom_start=14)
     
-    # Se colocan los marcadores en las coordenadas exactas de cada reporte
     for _, row in df_filtrado.iterrows():
         popup_html = f"""
         <b>Reporte #{row['id']}</b><br>
@@ -359,7 +380,7 @@ with col_right:
 st.markdown("---")
 
 # ----------------------------------------------------
-# Panel de Administración Municipal (Gestión, Notificaciones e Informes)
+# Panel de Administración Municipal
 # ----------------------------------------------------
 with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informes)"):
     st.write("Gestiona el estado de las incidencias, envía notificaciones automáticas y descarga reportes en PDF.")
@@ -393,7 +414,7 @@ with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informe
                     sector=df.loc[idx, "sector"]
                 )
                 if exito:
-                    st.success(f"✅ Reporte #{rep_id} actualizado. Notificación enviada por correo a {correo_vecino}.")
+                    st.success(f"✅ Reporte #{rep_id} actualizado. Notificación enviada a {correo_vecino}.")
                 else:
                     st.warning(f"✅ Estado actualizado, pero no se envió correo: {msg}")
             else:
@@ -415,7 +436,7 @@ with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informe
             use_container_width=True
         )
     with col_pdf2:
-        st.caption("Genera automáticamente un documento PDF oficial con membrete municipal, métricas generales e inventario detallado de casos para presentar ante el Alcalde o el Concejo Municipal.")
+        st.caption("Genera un documento PDF oficial con membrete municipal, métricas generales e inventario detallado de casos.")
 
 # ----------------------------------------------------
 # Galería e Histórico de Incidencias
