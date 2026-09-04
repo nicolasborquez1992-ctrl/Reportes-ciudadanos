@@ -119,7 +119,7 @@ if "incidencias" not in st.session_state:
 st.sidebar.header("📝 Nuevo Reporte Ciudadano")
 st.sidebar.caption("Ingresa los datos del problema detectado en la vía pública.")
 
-sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Maza", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 sector_input = st.sidebar.selectbox("Sector de Vallenar:", sectores_vallenar)
 
 cat_input = st.sidebar.selectbox(
