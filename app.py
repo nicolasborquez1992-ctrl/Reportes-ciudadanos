@@ -157,7 +157,7 @@ if "incidencias" not in st.session_state:
         }
     ])
 
-sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Las Pircas", "Los regidores", "San Ambrosio", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
 # Encabezado con Menú Desplegable (Caja para cambiar de vista)
