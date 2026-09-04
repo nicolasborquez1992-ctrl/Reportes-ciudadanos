@@ -65,7 +65,7 @@ LAT_VALLENAR = -28.5750
 LON_VALLENAR = -70.7580
 
 # Contraseña para el modo administrador
-CLAVE_ADMIN = "vallenar2026"
+CLAVE_ADMIN = "municipalidad2028"
 
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
