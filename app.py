@@ -1,26 +1,4 @@
-import pandas as pd
-import folium
-from streamlit_folium import st_folium
-import plotly.express as px
-from datetime import datetime
-from PIL import Image
-from streamlit_js_eval import get_geolocation
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import io
-
-# Librerías para generación de PDF
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-
-# ----------------------------------------------------
-# Configuración Inicial de la Aplicación
-# ----------------------------------------------------
-st.set_page_confi…
-[17:29, 4/9/2026] Nicolás Bórquez: import streamlit as st
+import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
