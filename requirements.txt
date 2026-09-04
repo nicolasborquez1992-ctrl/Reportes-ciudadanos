@@ -5,3 +5,4 @@ streamlit-folium
 plotly
 Pillow
 streamlit-js-eval
+reportlab
