@@ -14,7 +14,6 @@ st.set_page_config(
     page_icon="🏙️",
     layout="wide"
 )
-
 # Estilo personalizado para insignias y fuentes
 st.markdown("""
     <style>
