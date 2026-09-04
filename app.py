@@ -19,26 +19,20 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 # ----------------------------------------------------
-# Configuración Inicial
+# Configuración Inicial de la Página
 # ----------------------------------------------------
 st.set_page_config(
-    page_title="Vallenar Resuelve - Gestión Territorial y Ciencia Ciudadana",
+    page_title="Vallenar Resuelve - Gestión Territorial y Atención Ciudadana",
     page_icon="🏙️",
     layout="wide"
 )
 
-# URL del logo de Vallenar o ruta local si lo guardas como archivo
+# URL del logo de Vallenar
 URL_LOGO_VALLENAR = "https://upload.wikimedia.org/wikipedia/commons/2/27/Escudo_de_Vallenar.svg"
 
-# CSS Personalizado
+# CSS Personalizado (Adaptable a Modo Claro y Oscuro)
 st.markdown("""
     <style>
-    .header-container {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 15px;
-    }
     .main-title { 
         font-size: 2.1rem; 
         font-weight: 800; 
@@ -69,7 +63,7 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* Pie de página moderno y llamativo */
+    /* Pie de página moderno y atractivo */
     .footer-card {
         background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #0369A1 100%);
         color: white;
@@ -156,11 +150,17 @@ def cargar_datos_excel():
         }
     ]
     df = pd.DataFrame(data_inicial)
-    df.to_excel(EXCEL_FILE, index=False)
+    try:
+        df.to_excel(EXCEL_FILE, index=False)
+    except Exception:
+        pass
     return df
 
 def guardar_datos_excel(df):
-    df.to_excel(EXCEL_FILE, index=False)
+    try:
+        df.to_excel(EXCEL_FILE, index=False)
+    except Exception as e:
+        st.error(f"Error al guardar datos en Excel: {e}. Asegúrate de tener instalada la librería 'openpyxl'.")
 
 if "incidencias" not in st.session_state:
     st.session_state.incidencias = cargar_datos_excel()
@@ -173,11 +173,6 @@ sectores_vallenar = ["Centro", "Torreblanca", "Hda ventanas", "Hda cavancha", "L
 def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria, sector):
     if not destinatario or "@" not in destinatario or destinatario == "No especificado":
         return False, "No se registró un correo válido para este reporte."
-
-    SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 587
-    SENDER_EMAIL = "contacto.vallenar.resuelve@gmail.com"
-    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"
 
     asunto = f"🔔 Actualización de Reporte #{id_reporte} - Ilustre Municipalidad de Vallenar"
     cuerpo = f"""
@@ -197,18 +192,12 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     """
 
     msg = MIMEMultipart()
-    msg['From'] = SENDER_EMAIL
+    msg['From'] = "contacto.vallenar.resuelve@gmail.com"
     msg['To'] = destinatario
     msg['Subject'] = asunto
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
-        # Se requiere configurar credenciales reales para activar el envío vía SMTP
-        # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        # server.starttls()
-        # server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        # server.sendmail(SENDER_EMAIL, destinatario, msg.as_string())
-        # server.quit()
         return True, "Simulación: correo preparado correctamente."
     except Exception as e:
         return False, str(e)
@@ -224,7 +213,7 @@ def generar_pdf_gestion(df_data):
     
     story.append(Paragraph("<b>ILUSTRE MUNICIPALIDAD DE VALLENAR</b>", styles['Heading1']))
     story.append(Paragraph("<b>INFORME DE GESTIÓN DE INCIDENCIAS URBANAS</b>", styles['Normal']))
-    story.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+    story.append(Paragraph(f"Fecha de emisión: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
     story.append(Spacer(1, 15))
 
     table_data = [["Folio", "Fecha", "Sector", "Categoría", "Estado"]]
@@ -251,8 +240,7 @@ col_logo, col_encabezado, col_menu = st.columns([0.4, 1.4, 1])
 
 with col_logo:
     try:
-        # Se muestra la insignia oficial de Vallenar
-        st.image(URL_LOGO_VALLENAR, width=95)
+        st.image(URL_LOGO_VALLENAR, width=90)
     except Exception:
         st.write("🏛️")
 
@@ -261,14 +249,14 @@ with col_encabezado:
         <div>
             <span class="badge-vallenar">ILUSTRE MUNICIPALIDAD DE VALLENAR</span>
             <h1 class="main-title">🏙️ Vallenar Resuelve</h1>
-            <p class="sub-title">Gestión Territorial y Ciencia Ciudadana</p>
+            <p class="sub-title">Plataforma Digital de Gestión Territorial y Atención Ciudadana</p>
         </div>
     """, unsafe_allow_html=True)
 
 with col_menu:
     opcion_menu = st.selectbox(
-        "📌 Menú / Ir a:",
-        ["📝 Crear Nuevo Reporte", "🗺️ Mapa y Reportes", "⚙️ Administración"],
+        "📌 Menú / Navegación:",
+        ["📝 Crear Nuevo Reporte", "🗺️ Mapa y Reportes", "⚙️ Panel de Administración"],
         index=0
     )
 
@@ -280,9 +268,9 @@ st.markdown("---")
 if opcion_menu == "📝 Crear Nuevo Reporte":
     st.subheader("📝 Formulario de Reporte Ciudadano")
     
-    sector_input = st.selectbox("Sector:", sectores_vallenar)
+    sector_input = st.selectbox("Sector / Barrio:", sectores_vallenar)
     cat_input = st.selectbox(
-        "Tipo de Problema:", 
+        "Categoría del Problema:", 
         ["Bache / Evento en Calzada", "Luminaria Defectuosa", "Microbasural / Escombros", "Fuga de Agua / Alcantarillado", "Semáforo Defectuoso", "Señaletica Dañada", "Arbolado / Peligro de Caída"]
     )
     prioridad_input = st.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
@@ -291,18 +279,18 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
     if location and "coords" in location:
         lat_input = float(location["coords"]["latitude"])
         lon_input = float(location["coords"]["longitude"])
-        st.success(f"📍 GPS Capturado: {lat_input:.4f}, {lon_input:.4f}")
+        st.success(f"📍 Coordenadas GPS Capturadas: {lat_input:.4f}, {lon_input:.4f}")
     else:
         lat_input, lon_input = LAT_VALLENAR, LON_VALLENAR
         st.info("📍 Usando ubicación central de Vallenar")
 
-    comentario_input = st.text_area("Descripción detallada del problema:")
-    contacto_input = st.text_input("Correo electrónico de contacto:", placeholder="ejemplo@correo.cl")
-    foto_input = st.file_uploader("Adjuntar Foto / Evidencia:", type=["jpg", "png", "jpeg"])
+    comentario_input = st.text_area("Descripción detallada de la incidencia:")
+    contacto_input = st.text_input("Correo electrónico del vecino:", placeholder="ejemplo@correo.cl")
+    foto_input = st.file_uploader("Adjuntar Foto / Evidencia (Máx 200MB):", type=["jpg", "png", "jpeg"])
 
     if st.button("🚀 Enviar Reporte a la Municipalidad", use_container_width=True):
         if comentario_input.strip() == "":
-            st.warning("Por favor agrega una breve descripción.")
+            st.warning("Por favor agrega una breve descripción del problema.")
         else:
             nuevo_id = len(st.session_state.incidencias) + 1
             
@@ -322,7 +310,7 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
             
             st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
             guardar_datos_excel(st.session_state.incidencias)
-            st.success(f"✅ ¡Reporte #{nuevo_id} enviado y guardado con éxito en la base de datos!")
+            st.success(f"✅ ¡Reporte #{nuevo_id} ingresado y guardado exitosamente!")
 
 # ----------------------------------------------------
 # VISTA 2: MAPA Y REPORTES
@@ -331,7 +319,7 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
     df = st.session_state.incidencias
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total", len(df))
+    m1.metric("Total Incidentes", len(df))
     m2.metric("Pendientes", len(df[df["estado"] == "Pendiente"]))
     m3.metric("En Proceso", len(df[df["estado"] == "En Proceso"]))
     m4.metric("Resueltos", len(df[df["estado"] == "Resuelto"]))
@@ -339,71 +327,90 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
     st.markdown("---")
     st.subheader("🔍 Filtros de Búsqueda")
     
-    filtro_sector = st.multiselect("Sector:", options=sectores_vallenar, default=[])
-    filtro_estado = st.multiselect("Estado:", options=["Pendiente", "En Proceso", "Resuelto"], default=[])
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1:
+        filtro_sector = st.multiselect("Sector:", options=sectores_vallenar, default=[], placeholder="Seleccionar opciones...")
+    with col_f2:
+        filtro_estado = st.multiselect("Estado:", options=["Pendiente", "En Proceso", "Resuelto"], default=[], placeholder="Seleccionar opciones...")
+    with col_f3:
+        filtro_urgencia = st.multiselect("Urgencia:", options=["Baja", "Media", "Alta", "Crítica"], default=[], placeholder="Seleccionar opciones...")
 
     df_filtrado = df.copy()
-    if filtro_sector: df_filtrado = df_filtrado[df_filtrado["sector"].isin(filtro_sector)]
-    if filtro_estado: df_filtrado = df_filtrado[df_filtrado["estado"].isin(filtro_estado)]
+    if filtro_sector: 
+        df_filtrado = df_filtrado[df_filtrado["sector"].isin(filtro_sector)]
+    if filtro_estado: 
+        df_filtrado = df_filtrado[df_filtrado["estado"].isin(filtro_estado)]
+    if filtro_urgencia: 
+        df_filtrado = df_filtrado[df_filtrado["prioridad"].isin(filtro_urgencia)]
 
-    st.subheader(f"🗺️ Mapa Georreferenciado ({len(df_filtrado)})")
-    
-    centro_lat = float(df_filtrado["lat"].iloc[-1]) if len(df_filtrado) > 0 else LAT_VALLENAR
-    centro_lon = float(df_filtrado["lon"].iloc[-1]) if len(df_filtrado) > 0 else LON_VALLENAR
-    
-    m = folium.Map(location=[centro_lat, centro_lon], zoom_start=14)
-    for _, row in df_filtrado.iterrows():
-        folium.Marker(
-            location=[float(row["lat"]), float(row["lon"])],
-            popup=f"<b>#{row['id']}</b>: {row['categoria']}",
-            tooltip=f"#{row['id']} - {row['categoria']}"
-        ).add_to(m)
+    col_mapa, col_grafico = st.columns([1.8, 1])
+
+    with col_mapa:
+        st.subheader(f"🗺️ Mapa Georreferenciado ({len(df_filtrado)} incidencias)")
+        centro_lat = float(df_filtrado["lat"].iloc[-1]) if len(df_filtrado) > 0 else LAT_VALLENAR
+        centro_lon = float(df_filtrado["lon"].iloc[-1]) if len(df_filtrado) > 0 else LON_VALLENAR
         
-    st_folium(m, width="100%", height=350, key="mapa_vallenar")
+        m = folium.Map(location=[centro_lat, centro_lon], zoom_start=14)
+        for _, row in df_filtrado.iterrows():
+            folium.Marker(
+                location=[float(row["lat"]), float(row["lon"])],
+                popup=f"<b>#{row['id']}</b>: {row['categoria']}",
+                tooltip=f"#{row['id']} - {row['categoria']}"
+            ).add_to(m)
+            
+        st_folium(m, width="100%", height=350, key="mapa_vallenar")
+
+    with col_grafico:
+        st.subheader("📊 Distribución por Sector")
+        if len(df_filtrado) > 0:
+            fig = px.pie(df_filtrado, names='sector', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set2)
+            fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No hay datos para mostrar en la gráfica.")
 
     st.markdown("---")
-    st.subheader("📋 Galería de Reportes")
+    st.subheader("📋 Galería de Reportes y Evidencia Fotográfica")
     if len(df_filtrado) > 0:
         for _, row in df_filtrado.iloc[::-1].iterrows():
-            with st.expander(f"📍 Folio #{row['id']} - {row['categoria']} ({row['sector']})"):
-                st.write(f"**Estado:** {row['estado']} | **Urgencia:** {row['prioridad']}")
-                st.info(f"**Descripción:** {row['comentario']}")
-                st.success(f"**Respuesta Municipal:** {row.get('obs_municipal', 'En revisión')}")
+            with st.expander(f"📍 Folio #{row['id']} - {row['categoria']} ({row['sector']}) — Estado: [{row['estado']}]"):
+                st.write(f"*Urgencia:* {row['prioridad']} | *Fecha:* {row['fecha']}")
+                st.info(f"*Descripción del Vecino:* {row['comentario']}")
+                st.success(f"*Respuesta Municipal:* {row.get('obs_municipal', 'En espera de revisión.')}")
 
 # ----------------------------------------------------
-# VISTA 3: ADMINISTRACIÓN
+# VISTA 3: PANEL DE ADMINISTRACIÓN
 # ----------------------------------------------------
-elif opcion_menu == "⚙️ Administración":
-    st.subheader("⚙️ Panel Municipal")
+elif opcion_menu == "⚙️ Panel de Administración":
+    st.subheader("⚙️ Panel de Administración Municipal (Gestión e Informes)")
     pass_input = st.text_input("Ingrese Clave de Administrador:", type="password")
     
     if pass_input == CLAVE_ADMIN:
-        st.success("🔑 Sesión Activa")
+        st.success("🔑 Sesión de Administrador Activa")
         df = st.session_state.incidencias
         
         if len(df) > 0:
             rep_id = st.selectbox(
-                "Gestionar Reporte:", 
+                "Gestionar Incidencia:", 
                 options=df["id"].tolist(), 
-                format_func=lambda x: f"Folio #{x} - {df[df['id']==x]['categoria'].values[0]}"
+                format_func=lambda x: f"Folio #{x} - {df[df['id']==x]['categoria'].values[0]} ({df[df['id']==x]['sector'].values[0]})"
             )
             idx = df[df["id"] == rep_id].index[0]
             
             nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
-            nueva_obs = st.text_input("Observación Interna:", value=str(df.loc[idx, "obs_municipal"]))
+            nueva_obs = st.text_input("Observación Interna / Respuesta al Vecino:", value=str(df.loc[idx, "obs_municipal"]))
                 
-            if st.button("💾 Actualizar y Guardar en Excel", use_container_width=True):
+            if st.button("💾 Actualizar y Guardar Cambios en Excel", use_container_width=True):
                 st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
                 st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
                 guardar_datos_excel(st.session_state.incidencias)
                 
-                # Envío de correo al actualizar estado
                 correo_destinatario = str(df.loc[idx, "contacto"])
                 cat_actual = str(df.loc[idx, "categoria"])
                 sec_actual = str(df.loc[idx, "sector"])
                 enviado, msj = enviar_correo_notificacion(correo_destinatario, rep_id, nuevo_estado, cat_actual, sec_actual)
                 
-                st.success(f"✅ Reporte #{rep_id} actualizado en Excel.")
+                st.success(f"✅ Reporte #{rep_id} actualizado con éxito.")
                 st.rerun()
 
         st.markdown("---")
@@ -424,27 +431,27 @@ elif opcion_menu == "⚙️ Administración":
         with col_pdf:
             pdf_bytes = generar_pdf_gestion(df)
             st.download_button(
-                label="📥 Descargar Informe (PDF)",
+                label="📥 Descargar Informe de Gestión (PDF)",
                 data=pdf_bytes,
                 file_name=f"Informe_Vallenar_{datetime.now().strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
     elif pass_input != "":
-        st.error("❌ Clave incorrecta")
+        st.error("❌ Clave de acceso incorrecta")
 
 # ----------------------------------------------------
-# Pie de Página Renovado y Llamativo
+# Pie de Página Renovado y Llamativo en Español
 # ----------------------------------------------------
 st.markdown("""
     <div class="footer-card">
         <h3>🌟 ¡Construyendo juntos el Vallenar que soñamos!</h3>
-        <p>Tu participación es la fuerza que impulsa las mejoras en nuestros barrios y sectores.</p>
+        <p>Tu participación ciudadana es el motor clave para transformar y cuidar nuestros barrios.</p>
         <div class="footer-badges">
-            <span class="footer-badge-item">📍 Provincia de Huasco</span>
+            <span class="footer-badge-item">🌐 Gestión Territorial</span>
             <span class="footer-badge-item">🤝 Ciencia Ciudadana</span>
             <span class="footer-badge-item">🏛️ Ilustre Municipalidad de Vallenar</span>
-            <span class="footer-badge-item">✨ Región de Atacama</span>
+            <span class="footer-badge-item">📍 Región de Atacama, Chile</span>
         </div>
     </div>
 """, unsafe_allow_html=True)
