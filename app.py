@@ -64,13 +64,13 @@ st.markdown("""
 LAT_VALLENAR = -28.5750
 LON_VALLENAR = -70.7580
 
+# Contraseña para el modo administrador
+CLAVE_ADMIN = "vallenar2026"
+
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
 # ----------------------------------------------------
 def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria, sector):
-    """
-    Envía un correo automático al vecino notificando el cambio de estado de su reporte.
-    """
     if not destinatario or "@" not in destinatario or destinatario == "No especificado":
         return False, "No se registró un correo válido para este reporte."
 
@@ -104,12 +104,6 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
-        # Servidor SMTP (descomentar en producción):
-        # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        # server.starttls()
-        # server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        # server.sendmail(SENDER_EMAIL, destinatario, msg.as_string())
-        # server.quit()
         return True, "Correo enviado correctamente."
     except Exception as e:
         return False, str(e)
@@ -118,9 +112,6 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
 # Módulo 2: Generador de Informes PDF para Autoridades
 # ----------------------------------------------------
 def generar_pdf_gestion(df_data):
-    """
-    Genera un archivo PDF institucional con métricas e inventario consolidado.
-    """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, 
@@ -131,7 +122,6 @@ def generar_pdf_gestion(df_data):
         bottomMargin=36
     )
     story = []
-    
     styles = getSampleStyleSheet()
     
     title_style = ParagraphStyle(
@@ -152,13 +142,11 @@ def generar_pdf_gestion(df_data):
         spaceAfter=15
     )
 
-    # Encabezado institucional
     story.append(Paragraph("ILUSTRE MUNICIPALIDAD DE VALLENAR", title_style))
     story.append(Paragraph("<b>INFORME DE GESTIÓN DE INCIDENCIAS URBANAS</b>", subtitle_style))
     story.append(Paragraph(f"<b>Fecha de Emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
     story.append(Spacer(1, 10))
 
-    # Resumen Ejecutivo
     total = len(df_data)
     pendientes = len(df_data[df_data["estado"] == "Pendiente"])
     proceso = len(df_data[df_data["estado"] == "En Proceso"])
@@ -174,7 +162,6 @@ def generar_pdf_gestion(df_data):
     story.append(Paragraph(resumen_text, styles['Normal']))
     story.append(Spacer(1, 15))
 
-    # Tabla Consolidada
     story.append(Paragraph("<b>Detalle General de Reportes:</b>", styles['Normal']))
     story.append(Spacer(1, 8))
 
@@ -262,61 +249,81 @@ if "incidencias" not in st.session_state:
     ])
 
 # ----------------------------------------------------
-# Formulario Lateral de Registro
+# Selector de Rol (Usuario / Administrador)
 # ----------------------------------------------------
-st.sidebar.header("📝 Nuevo Reporte Ciudadano")
+st.sidebar.title("👤 Tipo de Acceso")
+rol_usuario = st.sidebar.radio("Ingresar como:", ["🙋‍♂️ Vecino (Crear Reporte)", "⚙️ Administrador Municipal"])
+
+es_admin_autenticado = False
+
+if rol_usuario == "⚙️ Administrador Municipal":
+    st.sidebar.markdown("---")
+    pass_input = st.sidebar.text_input("Clave de Administrador:", type="password")
+    if pass_input == CLAVE_ADMIN:
+        st.sidebar.success("🔑 Sesión de Administración Activa")
+        es_admin_autenticado = True
+    elif pass_input != "":
+        st.sidebar.error("❌ Clave incorrecta")
+
+st.sidebar.markdown("---")
+
+# ----------------------------------------------------
+# Formulario Lateral de Registro (Solo visible para Modo Vecino)
+# ----------------------------------------------------
 sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
-sector_input = st.sidebar.selectbox("Sector:", sectores_vallenar)
+if rol_usuario == "🙋‍♂️ Vecino (Crear Reporte)":
+    st.sidebar.header("📝 Nuevo Reporte Ciudadano")
+    sector_input = st.sidebar.selectbox("Sector:", sectores_vallenar)
 
-cat_input = st.sidebar.selectbox(
-    "Categoría del Problema:", 
-    ["Bache / Evento en Calzada", "Luminaria Defectuosa", "Microbasural / Escombros", "Fuga de Agua / Alcantarillado", "Semáforo Defectuoso", "Señaletica Dañada", "Arbolado / Peligro de Caída"]
-)
+    cat_input = st.sidebar.selectbox(
+        "Categoría del Problema:", 
+        ["Bache / Evento en Calzada", "Luminaria Defectuosa", "Microbasural / Escombros", "Fuga de Agua / Alcantarillado", "Semáforo Defectuoso", "Señaletica Dañada", "Arbolado / Peligro de Caída"]
+    )
 
-prioridad_input = st.sidebar.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
+    prioridad_input = st.sidebar.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
 
-# Captura de geolocalización GPS
-location = get_geolocation()
+    # Captura de geolocalización GPS
+    location = get_geolocation()
 
-if location and "coords" in location:
-    lat_input = float(location["coords"]["latitude"])
-    lon_input = float(location["coords"]["longitude"])
-    st.sidebar.success(f"📍 GPS Detectado: {lat_input:.4f}, {lon_input:.4f}")
-else:
-    lat_input, lon_input = LAT_VALLENAR, LON_VALLENAR
-    st.sidebar.info("📍 Usando ubicación central de Vallenar")
-
-st.sidebar.subheader("📷 Detalles y Notificación")
-comentario_input = st.sidebar.text_area("Descripción detallada:")
-contacto_input = st.sidebar.text_input("Correo electrónico del vecino:", placeholder="ejemplo@correo.cl")
-foto_input = st.sidebar.file_uploader("Adjuntar Foto:", type=["jpg", "png", "jpeg"])
-
-if st.sidebar.button("🚀 Ingresar Reporte", use_container_width=True):
-    if comentario_input.strip() == "":
-        st.sidebar.warning("Por favor agrega una pequeña descripción del problema.")
+    if location and "coords" in location:
+        lat_input = float(location["coords"]["latitude"])
+        lon_input = float(location["coords"]["longitude"])
+        st.sidebar.success(f"📍 GPS Detectado: {lat_input:.4f}, {lon_input:.4f}")
     else:
-        imagen_guardada = Image.open(foto_input) if foto_input is not None else None
-        nuevo_id = len(st.session_state.incidencias) + 1
-        
-        nueva_fila = pd.DataFrame([{
-            "id": nuevo_id,
-            "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "sector": sector_input,
-            "categoria": cat_input,
-            "lat": lat_input,
-            "lon": lon_input,
-            "estado": "Pendiente",
-            "comentario": comentario_input,
-            "prioridad": prioridad_input,
-            "contacto": contacto_input.strip() if contacto_input.strip() != "" else "No especificado",
-            "obs_municipal": "En espera de revisión por el departamento correspondiente.",
-            "imagen": imagen_guardada
-        }])
-        
-        st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
-        st.sidebar.success(f"¡Reporte #{nuevo_id} ingresado y georreferenciado!")
-        st.rerun()
+        lat_input, lon_input = LAT_VALLENAR, LON_VALLENAR
+        st.sidebar.info("📍 Usando ubicación central de Vallenar")
+
+    st.sidebar.subheader("📷 Detalles y Notificación")
+    comentario_input = st.sidebar.text_area("Descripción detallada:")
+    contacto_input = st.sidebar.text_input("Correo electrónico del vecino:", placeholder="ejemplo@correo.cl")
+    foto_input = st.sidebar.file_uploader("Adjuntar Foto:", type=["jpg", "png", "jpeg"])
+
+    if st.sidebar.button("🚀 Ingresar Reporte", use_container_width=True):
+        if comentario_input.strip() == "":
+            st.sidebar.warning("Por favor agrega una pequeña descripción del problema.")
+        else:
+            imagen_guardada = Image.open(foto_input) if foto_input is not None else None
+            nuevo_id = len(st.session_state.incidencias) + 1
+            
+            nueva_fila = pd.DataFrame([{
+                "id": nuevo_id,
+                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "sector": sector_input,
+                "categoria": cat_input,
+                "lat": lat_input,
+                "lon": lon_input,
+                "estado": "Pendiente",
+                "comentario": comentario_input,
+                "prioridad": prioridad_input,
+                "contacto": contacto_input.strip() if contacto_input.strip() != "" else "No especificado",
+                "obs_municipal": "En espera de revisión por el departamento correspondiente.",
+                "imagen": imagen_guardada
+            }])
+            
+            st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
+            st.sidebar.success(f"¡Reporte #{nuevo_id} ingresado y georreferenciado!")
+            st.rerun()
 
 # ----------------------------------------------------
 # Panel Principal: Métricas y Filtros
@@ -400,68 +407,68 @@ with col_right:
 st.markdown("---")
 
 # ----------------------------------------------------
-# Panel de Administración Municipal
+# Panel de Administración Municipal (Protegido con Contraseña)
 # ----------------------------------------------------
-with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informes)"):
-    st.write("Gestiona el estado de las incidencias, envía notificaciones automáticas y descarga reportes en PDF.")
-    
-    if len(df) > 0:
-        rep_id = st.selectbox(
-            "Seleccionar Reporte a gestionar:", 
-            options=df["id"].tolist(), 
-            format_func=lambda x: f"Folio #{x} - {df[df['id']==x]['categoria'].values[0]} ({df[df['id']==x]['sector'].values[0]})"
-        )
-        idx = df[df["id"] == rep_id].index[0]
+if es_admin_autenticado:
+    with st.expander("🛠️ Panel de Administración Municipal (Gestión e Informes)", expanded=True):
+        st.write("Gestiona el estado de las incidencias, envía notificaciones automáticas y descarga reportes en PDF.")
         
-        c_est, c_obs = st.columns([1, 2])
-        with c_est:
-            nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
-        with c_obs:
-            obs_actual = str(df.loc[idx, "obs_municipal"]) if pd.notna(df.loc[idx, "obs_municipal"]) else ""
-            nueva_obs = st.text_input("Observación Interna / Avance:", value=obs_actual)
+        if len(df) > 0:
+            rep_id = st.selectbox(
+                "Seleccionar Reporte a gestionar:", 
+                options=df["id"].tolist(), 
+                format_func=lambda x: f"Folio #{x} - {df[df['id']==x]['categoria'].values[0]} ({df[df['id']==x]['sector'].values[0]})"
+            )
+            idx = df[df["id"] == rep_id].index[0]
             
-        if st.button("💾 Actualizar Estado y Notificar al Vecino", use_container_width=True):
-            st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
-            st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
-            
-            correo_vecino = df.loc[idx, "contacto"]
-            if nuevo_estado in ["En Proceso", "Resuelto"] and correo_vecino != "No especificado":
-                exito, msg = enviar_correo_notificacion(
-                    destinatario=correo_vecino,
-                    id_reporte=rep_id,
-                    nuevo_estado=nuevo_estado,
-                    categoria=df.loc[idx, "categoria"],
-                    sector=df.loc[idx, "sector"]
-                )
-                if exito:
-                    st.success(f"✅ Reporte #{rep_id} actualizado. Notificación enviada a {correo_vecino}.")
+            c_est, c_obs = st.columns([1, 2])
+            with c_est:
+                nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
+            with c_obs:
+                obs_actual = str(df.loc[idx, "obs_municipal"]) if pd.notna(df.loc[idx, "obs_municipal"]) else ""
+                nueva_obs = st.text_input("Observación Interna / Avance:", value=obs_actual)
+                
+            if st.button("💾 Actualizar Estado y Notificar al Vecino", use_container_width=True):
+                st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
+                st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
+                
+                correo_vecino = df.loc[idx, "contacto"]
+                if nuevo_estado in ["En Proceso", "Resuelto"] and correo_vecino != "No especificado":
+                    exito, msg = enviar_correo_notificacion(
+                        destinatario=correo_vecino,
+                        id_reporte=rep_id,
+                        nuevo_estado=nuevo_estado,
+                        categoria=df.loc[idx, "categoria"],
+                        sector=df.loc[idx, "sector"]
+                    )
+                    if exito:
+                        st.success(f"✅ Reporte #{rep_id} actualizado. Notificación enviada a {correo_vecino}.")
+                    else:
+                        st.warning(f"✅ Estado actualizado, pero no se envió correo: {msg}")
                 else:
-                    st.warning(f"✅ Estado actualizado, pero no se envió correo: {msg}")
-            else:
-                st.success(f"✅ Reporte #{rep_id} actualizado exitosamente.")
-            st.rerun()
+                    st.success(f"✅ Reporte #{rep_id} actualizado exitosamente.")
+                st.rerun()
 
-    st.markdown("---")
-    st.subheader("📄 Reportes de Gestión para Autoridades")
-    
-    pdf_bytes = generar_pdf_gestion(df)
-    
-    col_pdf1, col_pdf2 = st.columns([1, 2])
-    with col_pdf1:
-        st.download_button(
-            label="📥 Descargar Informe Mensual (PDF)",
-            data=pdf_bytes,
-            file_name=f"Informe_Gestion_Vallenar_{datetime.now().strftime('%Y%m%d')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
-    with col_pdf2:
-        st.caption("Genera un documento PDF oficial con membrete municipal, métricas generales e inventario detallado de casos.")
+        st.markdown("---")
+        st.subheader("📄 Reportes de Gestión para Autoridades")
+        
+        pdf_bytes = generar_pdf_gestion(df)
+        
+        col_pdf1, col_pdf2 = st.columns([1, 2])
+        with col_pdf1:
+            st.download_button(
+                label="📥 Descargar Informe Mensual (PDF)",
+                data=pdf_bytes,
+                file_name=f"Informe_Gestion_Vallenar_{datetime.now().strftime('%Y%m%d')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        with col_pdf2:
+            st.caption("Genera un documento PDF oficial con membrete municipal, métricas generales e inventario detallado de casos.")
 
 # ----------------------------------------------------
 # Galería e Histórico de Incidencias
 # ----------------------------------------------------
-st.markdown("---")
 st.subheader("📋 Galería de Reportes y Evidencia Fotográfica")
 
 if len(df_filtrado) > 0:
@@ -478,7 +485,7 @@ if len(df_filtrado) > 0:
                     st.image(row["imagen"], caption=f"Evidencia Folio #{row['id']}", use_container_width=True)
 
 # ----------------------------------------------------
-# Pie de Página (Gestión Territorial, Ciencia Ciudadana e Institucional)
+# Pie de Página
 # ----------------------------------------------------
 st.markdown("---")
 st.markdown("""
