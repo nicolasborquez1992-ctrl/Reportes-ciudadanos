@@ -27,35 +27,84 @@ st.set_page_config(
     layout="wide"
 )
 
+# URL del logo de Vallenar o ruta local si lo guardas como archivo
+URL_LOGO_VALLENAR = "https://upload.wikimedia.org/wikipedia/commons/2/27/Escudo_de_Vallenar.svg"
+
 # CSS Personalizado
 st.markdown("""
     <style>
-    .main-title { font-size: 1.8rem; font-weight: 800; color: #1E3A8A; margin: 0; line-height: 1.2; }
-    .sub-title { font-size: 0.95rem; color: #4B5563; margin-top: 4px; font-weight: 500; }
-    .badge-vallenar { background-color: #1E3A8A; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-bottom: 4px; }
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    .main-title { 
+        font-size: 2.1rem; 
+        font-weight: 800; 
+        color: #1E3A8A; 
+        margin: 0; 
+        line-height: 1.2; 
+    }
+    .sub-title { 
+        font-size: 1rem; 
+        color: #4B5563; 
+        margin-top: 4px; 
+        font-weight: 500; 
+    }
+    .badge-vallenar { 
+        background-color: #1E3A8A; 
+        color: white; 
+        padding: 4px 10px; 
+        border-radius: 6px; 
+        font-size: 0.8rem; 
+        font-weight: 700; 
+        display: inline-block; 
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+    }
     
     div[data-baseweb="select"] {
         border: 2px solid #1E3A8A !important;
         border-radius: 8px !important;
     }
     
-    .footer-container {
+    /* Pie de página moderno y llamativo */
+    .footer-card {
+        background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #0369A1 100%);
+        color: white;
+        padding: 30px 20px;
+        border-radius: 16px;
         text-align: center;
-        padding: 20px 10px;
-        background-color: #F3F4F6;
-        border-radius: 10px;
-        margin-top: 30px;
-        color: #374151;
+        margin-top: 40px;
+        box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.3);
     }
-    .footer-title {
-        font-weight: 700;
-        font-size: 1rem;
-        color: #1E3A8A;
-        margin-bottom: 4px;
+    .footer-card h3 {
+        color: #FACC15 !important;
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin-bottom: 8px;
     }
-    .footer-sub {
+    .footer-card p {
+        font-size: 0.95rem;
+        color: #E0E7FF;
+        margin-bottom: 16px;
+    }
+    .footer-badges {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+    .footer-badge-item {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 6px 14px;
+        border-radius: 20px;
         font-size: 0.85rem;
-        color: #6B7280;
+        font-weight: 600;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -196,9 +245,16 @@ def generar_pdf_gestion(df_data):
     return buffer
 
 # ----------------------------------------------------
-# Encabezado Principal
+# Encabezado Principal (Con Logo Institucional)
 # ----------------------------------------------------
-col_encabezado, col_menu = st.columns([1.6, 1])
+col_logo, col_encabezado, col_menu = st.columns([0.4, 1.4, 1])
+
+with col_logo:
+    try:
+        # Se muestra la insignia oficial de Vallenar
+        st.image(URL_LOGO_VALLENAR, width=95)
+    except Exception:
+        st.write("🏛️")
 
 with col_encabezado:
     st.markdown("""
@@ -378,12 +434,17 @@ elif opcion_menu == "⚙️ Administración":
         st.error("❌ Clave incorrecta")
 
 # ----------------------------------------------------
-# Pie de Página
+# Pie de Página Renovado y Llamativo
 # ----------------------------------------------------
-st.markdown("---")
 st.markdown("""
-    <div class="footer-container">
-        <div class="footer-title">🌐 Gestión Territorial y Ciencia Ciudadana</div>
-        <div class="footer-sub">Ilustre Municipalidad de Vallenar — Región de Atacama, Chile</div>
+    <div class="footer-card">
+        <h3>🌟 ¡Construyendo juntos el Vallenar que soñamos!</h3>
+        <p>Tu participación es la fuerza que impulsa las mejoras en nuestros barrios y sectores.</p>
+        <div class="footer-badges">
+            <span class="footer-badge-item">📍 Provincia de Huasco</span>
+            <span class="footer-badge-item">🤝 Ciencia Ciudadana</span>
+            <span class="footer-badge-item">🏛️ Ilustre Municipalidad de Vallenar</span>
+            <span class="footer-badge-item">✨ Región de Atacama</span>
+        </div>
     </div>
 """, unsafe_allow_html=True)
