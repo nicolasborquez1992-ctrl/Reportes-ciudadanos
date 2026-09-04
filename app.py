@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo personalizado para insignias y fuentes
+# Estilo personalizado
 st.markdown("""
     <style>
     .main-header {
@@ -86,6 +86,8 @@ if "incidencias" not in st.session_state:
             "estado": "Pendiente",
             "comentario": "Evento de gran profundidad en avenida principal. Riesgo para vehículos pequeños.",
             "prioridad": "Alta",
+            "contacto": "vecino1@gmail.com",
+            "obs_municipal": "Asignado a cuadrilla de obras.",
             "imagen": None
         },
         {
@@ -98,6 +100,8 @@ if "incidencias" not in st.session_state:
             "estado": "En Proceso",
             "comentario": "Luminaria parpadea continuamente durante la noche frente a zona comercial.",
             "prioridad": "Media",
+            "contacto": "comercio_centro@vallenar.cl",
+            "obs_municipal": "En espera de repuestos de luminaria LED.",
             "imagen": None
         },
         {
@@ -110,6 +114,8 @@ if "incidencias" not in st.session_state:
             "estado": "Resuelto",
             "comentario": "Acumulación de escombros y voluminosos despejada por cuadrilla municipal.",
             "prioridad": "Baja",
+            "contacto": "vecino3@gmail.com",
+            "obs_municipal": "Limpieza realizada el 03/09.",
             "imagen": None
         }
     ])
@@ -158,9 +164,10 @@ else:
 lat_input = st.sidebar.number_input("Latitud GPS:", value=default_lat, format="%.5f")
 lon_input = st.sidebar.number_input("Longitud GPS:", value=default_lon, format="%.5f")
 
-# Comentario y Foto
+# Comentario, Contacto y Foto
 st.sidebar.subheader("📷 Evidencia y Detalles")
 comentario_input = st.sidebar.text_area("Comentario / Descripción detallada:", placeholder="Ej: Esquina frente al almacén, la fuga comenzó hoy en la mañana...")
+contacto_input = st.sidebar.text_input("Correo / Teléfono de Contacto (Opcional):", placeholder="ejemplo@correo.cl")
 foto_input = st.sidebar.file_uploader("Adjuntar Fotografía de Evidencia:", type=["jpg", "png", "jpeg"])
 
 if st.sidebar.button("🚀 Registrar Incidencia", use_container_width=True):
@@ -182,6 +189,8 @@ if st.sidebar.button("🚀 Registrar Incidencia", use_container_width=True):
             "estado": "Pendiente",
             "comentario": comentario_input,
             "prioridad": prioridad_input,
+            "contacto": contacto_input if contacto_input else "No especificado",
+            "obs_municipal": "En espera de revisión.",
             "imagen": imagen_guardada
         }])
         
@@ -202,12 +211,36 @@ m4.metric("Incidentes Resueltos", len(df[df["estado"] == "Resuelto"]))
 st.markdown("---")
 
 # ----------------------------------------------------
+# Filtros Interactivos para el Mapa y Reportes
+# ----------------------------------------------------
+st.subheader("🔍 Filtros de Búsqueda y Monitoreo")
+f_col1, f_col2, f_col3 = st.columns(3)
+
+with f_col1:
+    filtro_sector = st.multiselect("Filtrar por Sector:", options=sectores_vallenar, default=[])
+
+with f_col2:
+    filtro_estado = st.multiselect("Filtrar por Estado:", options=["Pendiente", "En Proceso", "Resuelto"], default=[])
+
+with f_col3:
+    filtro_prioridad = st.multiselect("Filtrar por Urgencia:", options=["Baja", "Media", "Alta", "Crítica"], default=[])
+
+# Aplicar Filtros
+df_filtrado = df.copy()
+if filtro_sector:
+    df_filtrado = df_filtrado[df_filtrado["sector"].isin(filtro_sector)]
+if filtro_estado:
+    df_filtrado = df_filtrado[df_filtrado["estado"].isin(filtro_estado)]
+if filtro_prioridad:
+    df_filtrado = df_filtrado[df_filtrado["prioridad"].isin(filtro_prioridad)]
+
+# ----------------------------------------------------
 # Módulo de Mapa Interactivo y Gráficos
 # ----------------------------------------------------
 col_left, col_right = st.columns([2, 1])
 
 with col_left:
-    st.subheader("🗺️ Mapa Georreferenciado de Vallenar")
+    st.subheader(f"🗺️ Mapa Georreferenciado ({len(df_filtrado)} mostrados)")
     
     m = folium.Map(location=[LAT_VALLENAR, LON_VALLENAR], zoom_start=14)
     
@@ -221,7 +254,7 @@ with col_left:
         "Arbolado / Peligro de Caída": "green"
     }
     
-    for _, row in df.iterrows():
+    for _, row in df_filtrado.iterrows():
         popup_html = f"""
         <div style="font-family: Arial; width: 200px;">
             <h4>Reporte #{row['id']}</h4>
@@ -245,22 +278,63 @@ with col_left:
 with col_right:
     st.subheader("📊 Métricas de Gestión")
     
-    fig_sector = px.pie(df, names="sector", title="Incidencias por Sector", hole=0.35)
-    st.plotly_chart(fig_sector, use_container_width=True)
-    
-    fig_cat = px.bar(df, x="categoria", title="Tipos de Incidencias", color="categoria")
-    fig_cat.update_layout(showlegend=False)
-    st.plotly_chart(fig_cat, use_container_width=True)
+    if len(df_filtrado) > 0:
+        fig_sector = px.pie(df_filtrado, names="sector", title="Incidencias por Sector", hole=0.35)
+        st.plotly_chart(fig_sector, use_container_width=True)
+        
+        fig_cat = px.bar(df_filtrado, x="categoria", title="Tipos de Incidencias", color="categoria")
+        fig_cat.update_layout(showlegend=False)
+        st.plotly_chart(fig_cat, use_container_width=True)
+    else:
+        st.info("No hay datos para mostrar con los filtros seleccionados.")
+
+st.markdown("---")
 
 # ----------------------------------------------------
-# Registro Detallado y Visor de Evidencias Fotográficas
+# Panel Municipal: Cambiar Estado y Observaciones
+# ----------------------------------------------------
+with st.expander("🛠️ Panel de Control Municipal (Gestión Interna)"):
+    st.write("Herramienta para funcionarios: actualiza el estado de las incidencias y agrega observaciones de resolución.")
+    
+    if len(df) > 0:
+        rep_id = st.selectbox("Seleccionar Reporte a Actualizar:", options=df["id"].tolist(), format_func=lambda x: f"Reporte #{x} - {df[df['id']==x]['categoria'].values[0]} ({df[df['id']==x]['sector'].values[0]})")
+        
+        idx = df[df["id"] == rep_id].index[0]
+        
+        c_est, c_obs = st.columns([1, 2])
+        with c_est:
+            nuevo_estado = st.selectbox("Actualizar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
+        with c_obs:
+            nueva_obs = st.text_input("Observación / Avance Municipal:", value=str(df.loc[idx, "obs_municipal"]))
+            
+        if st.button("💾 Guardar Cambios de Gestión"):
+            st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
+            st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
+            st.success(f"Reporte #{rep_id} actualizado a '{nuevo_estado}' con éxito.")
+            st.rerun()
+
+# ----------------------------------------------------
+# Registro Detallado, Evidencias y Exportación
 # ----------------------------------------------------
 st.markdown("---")
-st.subheader("📋 Galería de Reportes y Evidencia Fotográfica")
+col_tit, col_exp = st.columns([3, 1])
 
-if len(df) > 0:
-    for _, row in df.iloc[::-1].iterrows():
-        with st.expander(f"📍 Reporte #{row['id']} - {row['categoria']} en Sector {row['sector']} ({row['estado']})"):
+with col_tit:
+    st.subheader("📋 Galería de Reportes y Evidencia Fotográfica")
+
+with col_exp:
+    # Botón para descargar reporte en CSV
+    csv_data = df.drop(columns=["imagen"]).to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📥 Exportar Datos (CSV)",
+        data=csv_data,
+        file_name=f"reportes_vallenar_{datetime.now().strftime('%Y%m%d')}.csv",
+        mime="text/csv"
+    )
+
+if len(df_filtrado) > 0:
+    for _, row in df_filtrado.iloc[::-1].iterrows():
+        with st.expander(f"📍 Reporte #{row['id']} - {row['categoria']} en Sector {row['sector']} [{row['estado']}]"):
             c_info, c_img = st.columns([2, 1])
             
             with c_info:
@@ -268,8 +342,11 @@ if len(df) > 0:
                 st.write(f"*Ubicación GPS:* Lat {row['lat']} | Lon {row['lon']}")
                 st.write(f"*Nivel de Urgencia:* {row['prioridad']}")
                 st.write(f"*Estado Actual:* {row['estado']}")
+                st.write(f"*Contacto Vecinal:* {row['contacto']}")
                 st.write(f"*Comentario Ciudadano:*")
                 st.info(row["comentario"])
+                st.write(f"*Respuesta / Avance Municipal:*")
+                st.success(row["obs_municipal"])
                 
             with c_img:
                 if row["imagen"] is not None:
