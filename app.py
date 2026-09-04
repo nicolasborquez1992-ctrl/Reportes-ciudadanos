@@ -120,6 +120,12 @@ if "incidencias" not in st.session_state:
         }
     ])
 
+# Garantizar existencia de columnas en caso de estado previo de sesión
+if "obs_municipal" not in st.session_state.incidencias.columns:
+    st.session_state.incidencias["obs_municipal"] = "Sin observaciones aún."
+if "contacto" not in st.session_state.incidencias.columns:
+    st.session_state.incidencias["contacto"] = "No especificado"
+
 # ----------------------------------------------------
 # Formulario Lateral: Nuevo Reporte Ciudadano
 # ----------------------------------------------------
@@ -189,7 +195,7 @@ if st.sidebar.button("🚀 Registrar Incidencia", use_container_width=True):
             "estado": "Pendiente",
             "comentario": comentario_input,
             "prioridad": prioridad_input,
-            "contacto": contacto_input if contacto_input else "No especificado",
+            "contacto": contacto_input if contacto_input.strip() != "" else "No especificado",
             "obs_municipal": "En espera de revisión.",
             "imagen": imagen_guardada
         }])
@@ -305,7 +311,8 @@ with st.expander("🛠️ Panel de Control Municipal (Gestión Interna)"):
         with c_est:
             nuevo_estado = st.selectbox("Actualizar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
         with c_obs:
-            nueva_obs = st.text_input("Observación / Avance Municipal:", value=str(df.loc[idx, "obs_municipal"]))
+            obs_actual = str(df.loc[idx, "obs_municipal"]) if pd.notna(df.loc[idx, "obs_municipal"]) else ""
+            nueva_obs = st.text_input("Observación / Avance Municipal:", value=obs_actual)
             
         if st.button("💾 Guardar Cambios de Gestión"):
             st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
@@ -324,7 +331,8 @@ with col_tit:
 
 with col_exp:
     # Botón para descargar reporte en CSV
-    csv_data = df.drop(columns=["imagen"]).to_csv(index=False).encode('utf-8')
+    df_export = df.drop(columns=["imagen"], errors="ignore")
+    csv_data = df_export.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="📥 Exportar Datos (CSV)",
         data=csv_data,
@@ -342,11 +350,11 @@ if len(df_filtrado) > 0:
                 st.write(f"*Ubicación GPS:* Lat {row['lat']} | Lon {row['lon']}")
                 st.write(f"*Nivel de Urgencia:* {row['prioridad']}")
                 st.write(f"*Estado Actual:* {row['estado']}")
-                st.write(f"*Contacto Vecinal:* {row['contacto']}")
+                st.write(f"*Contacto Vecinal:* {row.get('contacto', 'No especificado')}")
                 st.write(f"*Comentario Ciudadano:*")
                 st.info(row["comentario"])
                 st.write(f"*Respuesta / Avance Municipal:*")
-                st.success(row["obs_municipal"])
+                st.success(row.get("obs_municipal", "En espera de revisión."))
                 
             with c_img:
                 if row["imagen"] is not None:
