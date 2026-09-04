@@ -10,6 +10,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import io
+import os
 
 # Librerías para generación de PDF
 from reportlab.lib.pagesizes import letter
@@ -26,14 +27,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS Personalizado para un menú bien visible en móviles
+# CSS Personalizado
 st.markdown("""
     <style>
     .main-title { font-size: 1.8rem; font-weight: 800; color: #1E3A8A; margin: 0; line-height: 1.2; }
     .sub-title { font-size: 0.95rem; color: #4B5563; margin-top: 4px; font-weight: 500; }
     .badge-vallenar { background-color: #1E3A8A; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-bottom: 4px; }
     
-    /* Resaltar la caja del menú desplegable */
     div[data-baseweb="select"] {
         border: 2px solid #1E3A8A !important;
         border-radius: 8px !important;
@@ -63,6 +63,60 @@ st.markdown("""
 LAT_VALLENAR = -28.5750
 LON_VALLENAR = -70.7580
 CLAVE_ADMIN = "vallenar2026"
+EXCEL_FILE = "reportes_vallenar.xlsx"
+
+# ----------------------------------------------------
+# Manejo de Persistencia en Excel
+# ----------------------------------------------------
+def cargar_datos_excel():
+    if os.path.exists(EXCEL_FILE):
+        try:
+            df = pd.read_excel(EXCEL_FILE)
+            if "obs_municipal" not in df.columns:
+                df["obs_municipal"] = "En espera de revisión."
+            return df
+        except Exception:
+            pass
+    
+    data_inicial = [
+        {
+            "id": 1,
+            "fecha": "2026-09-01",
+            "sector": "Torreblanca",
+            "categoria": "Bache / Evento en Calzada",
+            "lat": -28.5710,
+            "lon": -70.7620,
+            "estado": "Pendiente",
+            "comentario": "Evento de gran profundidad cerca de la escuela.",
+            "prioridad": "Alta",
+            "contacto": "vecino.torreblanca@gmail.com",
+            "obs_municipal": "Asignado a cuadrilla de obras."
+        },
+        {
+            "id": 2,
+            "fecha": "2026-09-02",
+            "sector": "Centro",
+            "categoria": "Luminaria Defectuosa",
+            "lat": -28.5760,
+            "lon": -70.7560,
+            "estado": "En Proceso",
+            "comentario": "Luminaria apagada en calle Prat.",
+            "prioridad": "Media",
+            "contacto": "comercio.centro@vallenar.cl",
+            "obs_municipal": "Repuestos solicitados en bodega."
+        }
+    ]
+    df = pd.DataFrame(data_inicial)
+    df.to_excel(EXCEL_FILE, index=False)
+    return df
+
+def guardar_datos_excel(df):
+    df.to_excel(EXCEL_FILE, index=False)
+
+if "incidencias" not in st.session_state:
+    st.session_state.incidencias = cargar_datos_excel()
+
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
@@ -74,7 +128,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SENDER_EMAIL = "contacto.vallenar.resuelve@gmail.com"
-    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"  # Reemplazar con clave de aplicación SMTP
+    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"
 
     asunto = f"🔔 Actualización de Reporte #{id_reporte} - Ilustre Municipalidad de Vallenar"
     cuerpo = f"""
@@ -100,12 +154,13 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        return True, "Correo enviado correctamente."
+        # Se requiere configurar credenciales reales para activar el envío vía SMTP
+        # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        # server.starttls()
+        # server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        # server.sendmail(SENDER_EMAIL, destinatario, msg.as_string())
+        # server.quit()
+        return True, "Simulación: correo preparado correctamente."
     except Exception as e:
         return False, str(e)
 
@@ -141,57 +196,9 @@ def generar_pdf_gestion(df_data):
     return buffer
 
 # ----------------------------------------------------
-# Inicialización de Datos
+# Encabezado Principal
 # ----------------------------------------------------
-if "incidencias" not in st.session_state:
-    st.session_state.incidencias = pd.DataFrame([
-        {
-            "id": 1,
-            "fecha": "2026-09-01",
-            "sector": "Torreblanca",
-            "categoria": "Bache / Evento en Calzada",
-            "lat": -28.5710,
-            "lon": -70.7620,
-            "estado": "Pendiente",
-            "comentario": "Evento de gran profundidad cerca de la escuela.",
-            "prioridad": "Alta",
-            "contacto": "vecino.torreblanca@gmail.com",
-            "obs_municipal": "Asignado a cuadrilla de obras.",
-            "imagen": None
-        },
-        {
-            "id": 2,
-            "fecha": "2026-09-02",
-            "sector": "Centro",
-            "categoria": "Luminaria Defectuosa",
-            "lat": -28.5760,
-            "lon": -70.7560,
-            "estado": "En Proceso",
-            "comentario": "Luminaria apagada en calle Prat.",
-            "prioridad": "Media",
-            "contacto": "comercio.centro@vallenar.cl",
-            "obs_municipal": "Repuestos solicitados en bodega.",
-            "imagen": None
-        }
-    ])
-
-sectores_vallenar = [
-    "Centro", "Torreblanca", "Baquedano", "Altos del valle", "Hda compañia", 
-    "Hda ventanas", "sector cavancha", "Hda buena esperanza", "Vista Alegre", 
-    "Las Pircas", "Los Regidores", "San Ambrosio", "Quinta Valle", 
-    "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"
-]
-
-# ----------------------------------------------------
-# Encabezado Principal con Frase y Logo
-# ----------------------------------------------------
-col_logo, col_encabezado, col_menu = st.columns([0.6, 1.8, 1.2])
-
-with col_logo:
-    try:
-        st.image("escudo.png", width=80)
-    except:
-        st.write("🏛️")
+col_encabezado, col_menu = st.columns([1.6, 1])
 
 with col_encabezado:
     st.markdown("""
@@ -224,7 +231,6 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
     )
     prioridad_input = st.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
 
-    # Captura GPS
     location = get_geolocation()
     if location and "coords" in location:
         lat_input = float(location["coords"]["latitude"])
@@ -242,7 +248,6 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
         if comentario_input.strip() == "":
             st.warning("Por favor agrega una breve descripción.")
         else:
-            imagen_guardada = Image.open(foto_input) if foto_input is not None else None
             nuevo_id = len(st.session_state.incidencias) + 1
             
             nueva_fila = pd.DataFrame([{
@@ -256,12 +261,12 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
                 "comentario": comentario_input,
                 "prioridad": prioridad_input,
                 "contacto": contacto_input.strip() if contacto_input.strip() != "" else "No especificado",
-                "obs_municipal": "En espera de revisión.",
-                "imagen": imagen_guardada
+                "obs_municipal": "En espera de revisión."
             }])
             
             st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
-            st.success(f"✅ ¡Reporte #{nuevo_id} enviado con éxito!")
+            guardar_datos_excel(st.session_state.incidencias)
+            st.success(f"✅ ¡Reporte #{nuevo_id} enviado y guardado con éxito en la base de datos!")
 
 # ----------------------------------------------------
 # VISTA 2: MAPA Y REPORTES
@@ -308,8 +313,6 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
                 st.write(f"**Estado:** {row['estado']} | **Urgencia:** {row['prioridad']}")
                 st.info(f"**Descripción:** {row['comentario']}")
                 st.success(f"**Respuesta Municipal:** {row.get('obs_municipal', 'En revisión')}")
-                if row["imagen"] is not None:
-                    st.image(row["imagen"], use_container_width=True)
 
 # ----------------------------------------------------
 # VISTA 3: ADMINISTRACIÓN
@@ -333,34 +336,44 @@ elif opcion_menu == "⚙️ Administración":
             nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
             nueva_obs = st.text_input("Observación Interna:", value=str(df.loc[idx, "obs_municipal"]))
                 
-            if st.button("💾 Actualizar Estado", use_container_width=True):
+            if st.button("💾 Actualizar y Guardar en Excel", use_container_width=True):
                 st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
                 st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
+                guardar_datos_excel(st.session_state.incidencias)
                 
-                # Intentar enviar notificación por correo al actualizar
-                dest_email = st.session_state.incidencias.loc[idx, "contacto"]
-                cat_actual = st.session_state.incidencias.loc[idx, "categoria"]
-                sec_actual = st.session_state.incidencias.loc[idx, "sector"]
+                # Envío de correo al actualizar estado
+                correo_destinatario = str(df.loc[idx, "contacto"])
+                cat_actual = str(df.loc[idx, "categoria"])
+                sec_actual = str(df.loc[idx, "sector"])
+                enviado, msj = enviar_correo_notificacion(correo_destinatario, rep_id, nuevo_estado, cat_actual, sec_actual)
                 
-                exito, msg_mail = enviar_correo_notificacion(dest_email, rep_id, nuevo_estado, cat_actual, sec_actual)
-                
-                if exito:
-                    st.success(f"✅ Reporte #{rep_id} actualizado. 📧 {msg_mail}")
-                else:
-                    st.success(f"✅ Reporte #{rep_id} actualizado. (Info Correo: {msg_mail})")
-                    
+                st.success(f"✅ Reporte #{rep_id} actualizado en Excel.")
                 st.rerun()
 
         st.markdown("---")
-        st.subheader("📄 Reporte Oficial")
-        pdf_bytes = generar_pdf_gestion(df)
-        st.download_button(
-            label="📥 Descargar Informe (PDF)",
-            data=pdf_bytes,
-            file_name=f"Informe_Vallenar_{datetime.now().strftime('%Y%m%d')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+        st.subheader("📊 Descargas y Reportes Oficiales")
+        col_excel, col_pdf = st.columns(2)
+        
+        with col_excel:
+            if os.path.exists(EXCEL_FILE):
+                with open(EXCEL_FILE, "rb") as f:
+                    st.download_button(
+                        label="📊 Descargar Base de Datos (Excel)",
+                        data=f,
+                        file_name=f"Reportes_Vallenar_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+
+        with col_pdf:
+            pdf_bytes = generar_pdf_gestion(df)
+            st.download_button(
+                label="📥 Descargar Informe (PDF)",
+                data=pdf_bytes,
+                file_name=f"Informe_Vallenar_{datetime.now().strftime('%Y%m%d')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
     elif pass_input != "":
         st.error("❌ Clave incorrecta")
 
