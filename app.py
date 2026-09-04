@@ -228,3 +228,28 @@ if len(df) > 0:
                     st.image(row["imagen"], caption=f"Evidencia Reporte #{row['id']}", use_column_width=True)
                 else:
                     st.caption("📷 Sin fotografía adjunta para este reporte.")
+
+# ----------------------------------------------------
+# Pie de Página (Footer) Institucional
+# ----------------------------------------------------
+st.markdown("---")
+
+footer_col1, footer_col2, footer_col3 = st.columns([1, 2, 1])
+
+with footer_col2:
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Escudo_de_Vallenar.svg/1200px-Escudo_de_Vallenar.svg.png", 
+        width=90
+    )
+    st.markdown(
+        """
+        <div style="text-align: center; color: #374151; font-family: sans-serif;">
+            <h3 style="margin-bottom: 2px; color: #1E3A8A;">Ilustre Municipalidad de Vallenar</h3>
+            <p style="font-size: 0.95rem; margin-bottom: 4px;"><b>Plataforma Digital de Gestión Territorial y Participación Ciudadana</b></p>
+            <p style="font-size: 0.85rem; color: #6B7280;">Provincia de Huasco — Región de Atacama, Chile</p>
+            <hr style="margin: 10px 0;">
+            <p style="font-size: 0.8rem; color: #9CA3AF;">© 2026 Vallenar Resuelve. Sistema optimizado para monitoreo y solución de incidentes en la vía pública.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
