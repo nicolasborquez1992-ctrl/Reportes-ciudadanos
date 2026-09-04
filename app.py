@@ -54,9 +54,7 @@ col_logo, col_texto = st.columns([1, 5])
 
 with col_logo:
     st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Escudo_de_Vallenar.svg/1200px-Escudo_de_Vallenar.svg.png", 
-        width=110
-    )
+        "https://raw.githubusercontent.com/nicolasborquez1992-ctrl/Reportes-ciudadanos/main/escudo.png"
 
 with col_texto:
     st.markdown("""
