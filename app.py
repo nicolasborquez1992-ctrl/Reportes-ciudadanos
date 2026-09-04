@@ -35,6 +35,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Coordenadas predeterminadas del centro de Vallenar
+LAT_VALLENAR = -28.5750
+LON_VALLENAR = -70.7580
+
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
 # ----------------------------------------------------
@@ -77,7 +81,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
-        # Descomentar para conectar en producción con un servidor real:
+        # Descomentar para conectar en producción con un servidor SMTP real:
         # server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         # server.starttls()
         # server.login(SENDER_EMAIL, SENDER_PASSWORD)
@@ -199,9 +203,6 @@ with col_texto:
 
 st.markdown("---")
 
-LAT_VALLENAR = -28.5750
-LON_VALLENAR = -70.7580
-
 # ----------------------------------------------------
 # Inicialización de la Base de Datos Local
 # ----------------------------------------------------
@@ -238,7 +239,7 @@ if "incidencias" not in st.session_state:
     ])
 
 # ----------------------------------------------------
-# Formulario Lateral de Registro
+# Formulario Lateral de Registro (Con GPS Automático)
 # ----------------------------------------------------
 st.sidebar.header("📝 Nuevo Reporte Ciudadano")
 sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
@@ -251,18 +252,15 @@ cat_input = st.sidebar.selectbox(
 
 prioridad_input = st.sidebar.select_slider("Urgencia Estimada:", options=["Baja", "Media", "Alta", "Crítica"])
 
-st.sidebar.subheader("📍 Coordenadas de la Incidencia")
+# Captura automática de ubicación GPS en segundo plano
 location = get_geolocation()
 
 if location and "coords" in location:
-    default_lat = float(location["coords"]["latitude"])
-    default_lon = float(location["coords"]["longitude"])
-    st.sidebar.success("🎯 Ubicación GPS obtenida")
+    lat_input = float(location["coords"]["latitude"])
+    lon_input = float(location["coords"]["longitude"])
+    st.sidebar.success("📍 Ubicación detectada automáticamente")
 else:
-    default_lat, default_lon = LAT_VALLENAR, LON_VALLENAR
-
-lat_input = st.sidebar.number_input("Latitud:", value=default_lat, format="%.5f")
-lon_input = st.sidebar.number_input("Longitud:", value=default_lon, format="%.5f")
+    lat_input, lon_input = LAT_VALLENAR, LON_VALLENAR
 
 st.sidebar.subheader("📷 Detalles y Notificación")
 comentario_input = st.sidebar.text_area("Descripción detallada:")
@@ -320,7 +318,7 @@ if filtro_estado: df_filtrado = df_filtrado[df_filtrado["estado"].isin(filtro_es
 if filtro_prioridad: df_filtrado = df_filtrado[df_filtrado["prioridad"].isin(filtro_prioridad)]
 
 # ----------------------------------------------------
-# Visualización: Mapa Interactivos y Gráficos
+# Visualización: Mapa Interactivo y Gráficos
 # ----------------------------------------------------
 col_left, col_right = st.columns([2, 1])
 
@@ -424,4 +422,4 @@ if len(df_filtrado) > 0:
                 st.success(f"*Respuesta Municipal:* {row.get('obs_municipal', 'Sin observaciones aún.')}")
             with c_img:
                 if row["imagen"] is not None:
-                    st.image(row["imagen"], caption=f"Evidencia Folio #{row['id']}", use_column_width=True)
+                    st.image(row["imagen"], caption=f"Evidencia Folio #{row['id']}", use_container_width=True)
