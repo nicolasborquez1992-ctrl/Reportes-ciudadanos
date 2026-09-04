@@ -15,16 +15,58 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilo personalizado para insignias y tarjetas
+# Estilo personalizado para insignias y fuentes
 st.markdown("""
     <style>
-    .main-title { font-size: 2.2rem; font-weight: bold; color: #1E3A8A; }
-    .sub-title { font-size: 1.1rem; color: #4B5563; }
+    .main-header {
+        background-color: #F3F4F6;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 6px solid #1E3A8A;
+        margin-bottom: 1.5rem;
+    }
+    .main-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #1E3A8A;
+        margin: 0;
+    }
+    .sub-title {
+        font-size: 1.05rem;
+        color: #4B5563;
+        margin-top: 5px;
+    }
+    .badge-vallenar {
+        background-color: #1E3A8A;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">🏙️ Vallenar Resuelve - Plataforma Integral de Incidencias Urbanas</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Sistema Comunitario de Reportes, Ciencia Ciudadana y Seguimiento Territorial en la Comuna de Vallenar (Región de Atacama).</p>', unsafe_allow_html=True)
+# ----------------------------------------------------
+# Encabezado Principal con Logo Institucional
+# ----------------------------------------------------
+col_logo, col_texto = st.columns([1, 5])
+
+with col_logo:
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Escudo_de_Vallenar.svg/1200px-Escudo_de_Vallenar.svg.png", 
+        width=110
+    )
+
+with col_texto:
+    st.markdown("""
+        <div>
+            <span class="badge-vallenar">ILUSTRE MUNICIPALIDAD DE VALLENAR</span>
+            <h1 class="main-title">🏙️ Vallenar Resuelve</h1>
+            <p class="sub-title"><b>Plataforma Digital de Gestión Territorial y Ciencia Ciudadana</b> — Registra, georreferencia y monitorea el estado de las incidencias en la comuna (Región de Atacama).</p>
+        </div>
+    """, unsafe_allow_html=True)
+
 st.markdown("---")
 
 # Coordenadas Base de Vallenar
