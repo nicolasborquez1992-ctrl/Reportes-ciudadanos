@@ -1,4 +1,3 @@
-[17:01, 4/9/2026] Nicolás Bórquez: import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
