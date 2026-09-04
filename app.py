@@ -5,6 +5,7 @@ from streamlit_folium import st_folium
 import plotly.express as px
 from datetime import datetime
 from PIL import Image
+from streamlit_js_eval import get_geolocation
 
 # ----------------------------------------------------
 # Configuración Inicial de la Aplicación
@@ -119,7 +120,7 @@ if "incidencias" not in st.session_state:
 st.sidebar.header("📝 Nuevo Reporte Ciudadano")
 st.sidebar.caption("Ingresa los datos del problema detectado en la vía pública.")
 
-sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Las Pircas", "San Ambrosio","Ventanas", "Los Regidores", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 sector_input = st.sidebar.selectbox("Sector de Vallenar:", sectores_vallenar)
 
 cat_input = st.sidebar.selectbox(
@@ -140,10 +141,22 @@ prioridad_input = st.sidebar.select_slider(
     options=["Baja", "Media", "Alta", "Crítica"]
 )
 
-# Ubicación y Coordenadas
+# Ubicación y Coordenadas GPS en Vivo
 st.sidebar.subheader("📍 Ubicación Exacta")
-lat_input = st.sidebar.number_input("Latitud GPS:", value=LAT_VALLENAR, format="%.5f")
-lon_input = st.sidebar.number_input("Longitud GPS:", value=LON_VALLENAR, format="%.5f")
+
+location = get_geolocation()
+
+if location and "coords" in location:
+    default_lat = float(location["coords"]["latitude"])
+    default_lon = float(location["coords"]["longitude"])
+    st.sidebar.success("🎯 Ubicación obtenida vía GPS")
+else:
+    default_lat = LAT_VALLENAR
+    default_lon = LON_VALLENAR
+    st.sidebar.info("💡 Acepta los permisos GPS o ingresa las coordenadas manualmente.")
+
+lat_input = st.sidebar.number_input("Latitud GPS:", value=default_lat, format="%.5f")
+lon_input = st.sidebar.number_input("Longitud GPS:", value=default_lon, format="%.5f")
 
 # Comentario y Foto
 st.sidebar.subheader("📷 Evidencia y Detalles")
