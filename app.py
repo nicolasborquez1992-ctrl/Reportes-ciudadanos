@@ -53,10 +53,7 @@ st.markdown("""
 col_logo, col_texto = st.columns([1, 5])
 
 with col_logo:
-    st.image(
-        "https://raw.githubusercontent.com/nicolasborquez1992-ctrl/Reportes-ciudadanos/main/escudo.png",
-        width=100
-    )
+    st.image("escudo.png", width=100)
 
 with col_texto:
     st.markdown("""
@@ -157,7 +154,6 @@ if st.sidebar.button("🚀 Registrar Incidencia", use_container_width=True):
     if comentario_input.strip() == "":
         st.sidebar.warning("Por favor agrega un breve comentario detallando la situación.")
     else:
-        # Procesar imagen si fue subida
         imagen_guardada = None
         if foto_input is not None:
             imagen_guardada = Image.open(foto_input)
@@ -200,7 +196,6 @@ col_left, col_right = st.columns([2, 1])
 with col_left:
     st.subheader("🗺️ Mapa Georreferenciado de Vallenar")
     
-    # Crear Mapa base
     m = folium.Map(location=[LAT_VALLENAR, LON_VALLENAR], zoom_start=14)
     
     colores_categoria = {
@@ -237,11 +232,9 @@ with col_left:
 with col_right:
     st.subheader("📊 Métricas de Gestión")
     
-    # Gráfico 1: Distribución por Sector
     fig_sector = px.pie(df, names="sector", title="Incidencias por Sector", hole=0.35)
     st.plotly_chart(fig_sector, use_container_width=True)
     
-    # Gráfico 2: Distribución por Categoría
     fig_cat = px.bar(df, x="categoria", title="Tipos de Incidencias", color="categoria")
     fig_cat.update_layout(showlegend=False)
     st.plotly_chart(fig_cat, use_container_width=True)
@@ -253,7 +246,7 @@ st.markdown("---")
 st.subheader("📋 Galería de Reportes y Evidencia Fotográfica")
 
 if len(df) > 0:
-    for _, row in df.iloc[::-1].iterrows(): # Mostrar más recientes primero
+    for _, row in df.iloc[::-1].iterrows():
         with st.expander(f"📍 Reporte #{row['id']} - {row['categoria']} en Sector {row['sector']} ({row['estado']})"):
             c_info, c_img = st.columns([2, 1])
             
@@ -279,10 +272,7 @@ st.markdown("---")
 footer_col1, footer_col2, footer_col3 = st.columns([1, 2, 1])
 
 with footer_col2:
-    st.image(
-        "https://raw.githubusercontent.com/nicolasborquez1992-ctrl/Reportes-ciudadanos/main/escudo.png", 
-        width=90
-    )
+    st.image("escudo.png", width=90)
     st.markdown(
         """
         <div style="text-align: center; color: #374151; font-family: sans-serif;">
