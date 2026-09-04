@@ -1,4 +1,27 @@
-import streamlit as st
+[17:01, 4/9/2026] Nicolás Bórquez: import streamlit as st
+import pandas as pd
+import folium
+from streamlit_folium import st_folium
+import plotly.express as px
+from datetime import datetime
+from PIL import Image
+from streamlit_js_eval import get_geolocation
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import io
+
+# Librerías para generación de PDF
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+
+# ----------------------------------------------------
+# Configuración Inicial de la Aplicación
+# ----------------------------------------------------
+st.set_page_confi…
+[17:29, 4/9/2026] Nicolás Bórquez: import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
@@ -21,7 +44,7 @@ from reportlab.lib import colors
 # Configuración Inicial
 # ----------------------------------------------------
 st.set_page_config(
-    page_title="Vallenar Resuelve",
+    page_title="Vallenar Resuelve - Gestión Territorial y Ciencia Ciudadana",
     page_icon="🏙️",
     layout="wide"
 )
@@ -29,9 +52,9 @@ st.set_page_config(
 # CSS Personalizado para un menú bien visible en móviles
 st.markdown("""
     <style>
-    .main-title { font-size: 1.8rem; font-weight: 800; color: #1E3A8A; margin: 0; }
-    .sub-title { font-size: 0.95rem; color: #4B5563; margin-top: 2px; }
-    .badge-vallenar { background-color: #1E3A8A; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .main-title { font-size: 1.8rem; font-weight: 800; color: #1E3A8A; margin: 0; line-height: 1.2; }
+    .sub-title { font-size: 0.95rem; color: #4B5563; margin-top: 4px; font-weight: 500; }
+    .badge-vallenar { background-color: #1E3A8A; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin-bottom: 4px; }
     
     /* Resaltar la caja del menú desplegable */
     div[data-baseweb="select"] {
@@ -46,6 +69,16 @@ st.markdown("""
         border-radius: 10px;
         margin-top: 30px;
         color: #374151;
+    }
+    .footer-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1E3A8A;
+        margin-bottom: 4px;
+    }
+    .footer-sub {
+        font-size: 0.85rem;
+        color: #6B7280;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -70,11 +103,14 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     cuerpo = f"""
     Estimado/a vecino/a,
 
-    Le informamos que su reporte ha cambiado de estado:
+    Le informamos que su reporte ingresado en la plataforma 'Vallenar Resuelve' ha cambiado de estado:
+
       • Folio: #{id_reporte}
-      • Tipo: {categoria}
+      • Tipo de Incidencia: {categoria}
       • Sector: {sector}
-      • Estado Actual: {nuevo_estado.upper()}
+      • Nuevo Estado: {nuevo_estado.upper()}
+
+    Agradecemos su valiosa colaboración para seguir construyendo una mejor comuna.
 
     Atentamente,
     Ilustre Municipalidad de Vallenar
@@ -157,18 +193,19 @@ if "incidencias" not in st.session_state:
         }
     ])
 
-sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Las Pircas", "Los regidores", "San Ambrosio", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
-# Encabezado con Menú Desplegable (Caja para cambiar de vista)
+# Encabezado Principal con Frase
 # ----------------------------------------------------
 col_encabezado, col_menu = st.columns([1.6, 1])
 
 with col_encabezado:
     st.markdown("""
         <div>
-            <span class="badge-vallenar">I. MUNICIPALIDAD DE VALLENAR</span>
+            <span class="badge-vallenar">ILUSTRE MUNICIPALIDAD DE VALLENAR</span>
             <h1 class="main-title">🏙️ Vallenar Resuelve</h1>
+            <p class="sub-title">Gestión Territorial y Ciencia Ciudadana</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -328,6 +365,7 @@ elif opcion_menu == "⚙️ Administración":
 st.markdown("---")
 st.markdown("""
     <div class="footer-container">
-        <b>Ilustre Municipalidad de Vallenar</b> — Región de Atacama, Chile
+        <div class="footer-title">🌐 Gestión Territorial y Ciencia Ciudadana</div>
+        <div class="footer-sub">Ilustre Municipalidad de Vallenar — Región de Atacama, Chile</div>
     </div>
 """, unsafe_allow_html=True)
