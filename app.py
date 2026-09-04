@@ -1,3 +1,4 @@
+Python
 import streamlit as st
 import pandas as pd
 import folium
@@ -74,7 +75,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     SENDER_EMAIL = "contacto.vallenar.resuelve@gmail.com"
-    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"
+    SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"  # Reemplazar con clave de aplicación SMTP
 
     asunto = f"🔔 Actualización de Reporte #{id_reporte} - Ilustre Municipalidad de Vallenar"
     cuerpo = f"""
@@ -100,6 +101,11 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     msg.attach(MIMEText(cuerpo, 'plain'))
 
     try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(msg)
+        server.quit()
         return True, "Correo enviado correctamente."
     except Exception as e:
         return False, str(e)
@@ -170,12 +176,23 @@ if "incidencias" not in st.session_state:
         }
     ])
 
-sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Altos del valle", "Hda compañia", "Hda ventanas", "sector cavancha", "Hda ventanas", "Hda buena esperanza", "Vista Alegre", "Las Pircas", "Los Regidores", "San Ambrosio", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = [
+    "Centro", "Torreblanca", "Baquedano", "Altos del valle", "Hda compañia", 
+    "Hda ventanas", "sector cavancha", "Hda buena esperanza", "Vista Alegre", 
+    "Las Pircas", "Los Regidores", "San Ambrosio", "Quinta Valle", 
+    "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"
+]
 
 # ----------------------------------------------------
-# Encabezado Principal con Frase
+# Encabezado Principal con Frase y Logo
 # ----------------------------------------------------
-col_encabezado, col_menu = st.columns([1.6, 1])
+col_logo, col_encabezado, col_menu = st.columns([0.6, 1.8, 1.2])
+
+with col_logo:
+    try:
+        st.image("escudo.png", width=80)
+    except:
+        st.write("🏛️")
 
 with col_encabezado:
     st.markdown("""
@@ -289,9 +306,9 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
     if len(df_filtrado) > 0:
         for _, row in df_filtrado.iloc[::-1].iterrows():
             with st.expander(f"📍 Folio #{row['id']} - {row['categoria']} ({row['sector']})"):
-                st.write(f"*Estado:* {row['estado']} | *Urgencia:* {row['prioridad']}")
-                st.info(f"*Descripción:* {row['comentario']}")
-                st.success(f"*Respuesta Municipal:* {row.get('obs_municipal', 'En revisión')}")
+                st.write(f"**Estado:** {row['estado']} | **Urgencia:** {row['prioridad']}")
+                st.info(f"**Descripción:** {row['comentario']}")
+                st.success(f"**Respuesta Municipal:** {row.get('obs_municipal', 'En revisión')}")
                 if row["imagen"] is not None:
                     st.image(row["imagen"], use_container_width=True)
 
@@ -320,7 +337,19 @@ elif opcion_menu == "⚙️ Administración":
             if st.button("💾 Actualizar Estado", use_container_width=True):
                 st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
                 st.session_state.incidencias.loc[idx, "obs_municipal"] = nueva_obs
-                st.success(f"✅ Reporte #{rep_id} actualizado.")
+                
+                # Intentar enviar notificación por correo al actualizar
+                dest_email = st.session_state.incidencias.loc[idx, "contacto"]
+                cat_actual = st.session_state.incidencias.loc[idx, "categoria"]
+                sec_actual = st.session_state.incidencias.loc[idx, "sector"]
+                
+                exito, msg_mail = enviar_correo_notificacion(dest_email, rep_id, nuevo_estado, cat_actual, sec_actual)
+                
+                if exito:
+                    st.success(f"✅ Reporte #{rep_id} actualizado. 📧 {msg_mail}")
+                else:
+                    st.success(f"✅ Reporte #{rep_id} actualizado. (Info Correo: {msg_mail})")
+                    
                 st.rerun()
 
         st.markdown("---")
