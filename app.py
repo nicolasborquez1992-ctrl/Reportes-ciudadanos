@@ -26,7 +26,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Personalizados (Traduce y oculta elementos en inglés de la interfaz)
+# Estilos CSS Personalizados
 st.markdown("""
     <style>
     .main-title { font-size: 2.2rem; font-weight: 800; color: #1E3A8A; margin: 0; }
@@ -36,6 +36,26 @@ st.markdown("""
     /* Ocultar el botón superior 'Share' de Streamlit */
     header[data-testid="stHeader"] {
         visibility: hidden;
+    }
+    
+    /* Estilo para el Pie de Página / Footer */
+    .footer-container {
+        text-align: center;
+        padding: 25px 10px;
+        background-color: #F3F4F6;
+        border-radius: 10px;
+        margin-top: 40px;
+        color: #374151;
+    }
+    .footer-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1E3A8A;
+        margin-bottom: 5px;
+    }
+    .footer-sub {
+        font-size: 0.9rem;
+        color: #6B7280;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -456,3 +476,17 @@ if len(df_filtrado) > 0:
             with c_img:
                 if row["imagen"] is not None:
                     st.image(row["imagen"], caption=f"Evidencia Folio #{row['id']}", use_container_width=True)
+
+# ----------------------------------------------------
+# Pie de Página (Gestión Territorial, Ciencia Ciudadana e Institucional)
+# ----------------------------------------------------
+st.markdown("---")
+st.markdown("""
+    <div class="footer-container">
+        <div class="footer-title">🌐 Gestión Territorial y Ciencia Ciudadana</div>
+        <div class="footer-sub">Ilustre Municipalidad de Vallenar — Región de Atacama, Chile</div>
+        <div style="font-size: 0.8rem; color: #9CA3AF; margin-top: 8px;">
+            Plataforma de participación comunitaria y monitoreo participativo para la mejora continua del espacio urbano.
+        </div>
+    </div>
+""", unsafe_allow_html=True)
