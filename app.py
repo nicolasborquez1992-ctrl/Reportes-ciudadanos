@@ -23,7 +23,8 @@ from reportlab.lib import colors
 st.set_page_config(
     page_title="Vallenar Resuelve - Reportes Urbanos",
     page_icon="🏙️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"  # <-- Fuerza a que el menú lateral abra expandido en celulares
 )
 
 # Estilos CSS Personalizados
@@ -65,7 +66,7 @@ LAT_VALLENAR = -28.5750
 LON_VALLENAR = -70.7580
 
 # Contraseña para el modo administrador
-CLAVE_ADMIN = "municipalidad2028"
+CLAVE_ADMIN = "vallenar2026"
 
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
