@@ -6,3 +6,4 @@ plotly
 Pillow
 streamlit-js-eval
 reportlab
+openpyxl
