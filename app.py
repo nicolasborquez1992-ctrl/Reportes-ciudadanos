@@ -22,8 +22,8 @@ from reportlab.lib import colors
 # Configuración Inicial y Carpeta de Fotos
 # ----------------------------------------------------
 st.set_page_config(
-    page_title="Vallenar Resuelve - Gestión Territorial y Atención Ciudadana",
-    page_icon="🏙️",
+    page_title="Vallenar Avanza - Gestión Territorial y Atención Ciudadana",
+    page_icon="🚀",
     layout="wide"
 )
 
@@ -35,13 +35,16 @@ if not os.path.exists(CARPETA_FOTOS):
 # URL del logo de Vallenar
 URL_LOGO_VALLENAR = "https://upload.wikimedia.org/wikipedia/commons/2/27/Escudo_de_Vallenar.svg"
 
-# CSS Personalizado
+# CSS Personalizado Mejorado y con más Color
 st.markdown("""
     <style>
+    /* Estilo del Título Principal */
     .main-title { 
-        font-size: 2.1rem; 
+        font-size: 2.3rem; 
         font-weight: 800; 
-        color: #1E3A8A; 
+        background: linear-gradient(90deg, #1E3A8A 0%, #0D9488 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0; 
         line-height: 1.2; 
     }
@@ -52,30 +55,57 @@ st.markdown("""
         font-weight: 500; 
     }
     .badge-vallenar { 
-        background-color: #1E3A8A; 
+        background: linear-gradient(135deg, #059669 0%, #1E3A8A 100%);
         color: white; 
-        padding: 4px 10px; 
-        border-radius: 6px; 
+        padding: 5px 12px; 
+        border-radius: 8px; 
         font-size: 0.8rem; 
         font-weight: 700; 
         display: inline-block; 
         margin-bottom: 6px;
         letter-spacing: 0.5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
+    /* Personalización de Selectbox e Inputs */
     div[data-baseweb="select"] {
-        border: 2px solid #1E3A8A !important;
+        border: 2px solid #0D9488 !important;
         border-radius: 8px !important;
     }
     
+    /* Tarjetas de Métricas Personalizadas */
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border-left: 5px solid #1E3A8A;
+        text-align: center;
+    }
+    .metric-card.pendiente { border-left-color: #EF4444; }
+    .metric-card.proceso { border-left-color: #F59E0B; }
+    .metric-card.resuelto { border-left-color: #10B981; }
+    
+    .metric-val {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #1F2937;
+    }
+    .metric-lbl {
+        font-size: 0.85rem;
+        color: #6B7280;
+        font-weight: 600;
+    }
+
+    /* Footer Estilizado */
     .footer-card {
-        background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #0369A1 100%);
+        background: linear-gradient(135deg, #1E3A8A 0%, #0D9488 100%);
         color: white;
         padding: 30px 20px;
         border-radius: 16px;
         text-align: center;
         margin-top: 40px;
-        box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.3);
     }
     .footer-card h3 {
         color: #FACC15 !important;
@@ -91,14 +121,14 @@ st.markdown("""
     .footer-badges {
         display: flex;
         justify-content: center;
-        gap: 15px;
+        gap: 12px;
         flex-wrap: wrap;
         margin-top: 15px;
     }
     .footer-badge-item {
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.18);
         backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
         padding: 6px 14px;
         border-radius: 20px;
         font-size: 0.85rem;
@@ -173,7 +203,7 @@ def guardar_datos_excel(df):
 if "incidencias" not in st.session_state:
     st.session_state.incidencias = cargar_datos_excel()
 
-sectores_vallenar = ["Centro", "Torreblanca", "Hda ventanas", "Hda cavancha", "Las Pircas", "Hda buena esperanza", "Regidores", "Vista alegre", "Hda compañia", "Altos del valle", "San Ambrosio", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
@@ -186,7 +216,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     cuerpo = f"""
     Estimado/a vecino/a,
 
-    Le informamos que su reporte ingresado en la plataforma 'Vallenar Resuelve' ha cambiado de estado:
+    Le informamos que su reporte ingresado en la plataforma 'Vallenar Avanza' ha cambiado de estado:
 
       • Folio: #{id_reporte}
       • Tipo de Incidencia: {categoria}
@@ -200,7 +230,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
     """
 
     msg = MIMEMultipart()
-    msg['From'] = "contacto.vallenar.resuelve@gmail.com"
+    msg['From'] = "contacto.vallenar.avanza@gmail.com"
     msg['To'] = destinatario
     msg['Subject'] = asunto
     msg.attach(MIMEText(cuerpo, 'plain'))
@@ -220,7 +250,7 @@ def generar_pdf_gestion(df_data):
     styles = getSampleStyleSheet()
     
     story.append(Paragraph("<b>ILUSTRE MUNICIPALIDAD DE VALLENAR</b>", styles['Heading1']))
-    story.append(Paragraph("<b>INFORME DE GESTIÓN DE INCIDENCIAS URBANAS</b>", styles['Normal']))
+    story.append(Paragraph("<b>INFORME DE GESTIÓN DE INCIDENCIAS URBANAS - VALLENAR AVANZA</b>", styles['Normal']))
     story.append(Paragraph(f"Fecha de emisión: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
     story.append(Spacer(1, 15))
 
@@ -230,7 +260,7 @@ def generar_pdf_gestion(df_data):
 
     t = Table(table_data, colWidths=[40, 70, 90, 190, 80])
     t.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1E3A8A")),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0D9488")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
@@ -256,14 +286,14 @@ with col_encabezado:
     st.markdown("""
         <div>
             <span class="badge-vallenar">ILUSTRE MUNICIPALIDAD DE VALLENAR</span>
-            <h1 class="main-title">🏙️ Vallenar Resuelve</h1>
+            <h1 class="main-title">🚀 Vallenar Avanza</h1>
             <p class="sub-title">Plataforma Digital de Gestión Territorial y Atención Ciudadana</p>
         </div>
     """, unsafe_allow_html=True)
 
 with col_menu:
     opcion_menu = st.selectbox(
-        "📌 Menú / Navegación:",
+        "📌 Navegación:",
         ["📝 Crear Nuevo Reporte", "🗺️ Mapa y Reportes", "⚙️ Panel de Administración"],
         index=0
     )
@@ -300,18 +330,15 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
         if comentario_input.strip() == "":
             st.warning("Por favor agrega una breve descripción del problema.")
         else:
-            # Generar un ID único autoincremental
             df_actual = st.session_state.incidencias
             nuevo_id = int(df_actual["id"].max() + 1) if len(df_actual) > 0 else 1
             
-            # Guardar la foto físicamente si el usuario la subió
             foto_path_guardada = "Sin foto"
             if foto_input is not None:
                 ext = foto_input.name.split(".")[-1]
                 nombre_archivo = f"reporte_{nuevo_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
                 foto_path_guardada = os.path.join(CARPETA_FOTOS, nombre_archivo)
                 
-                # Guardar imagen en disco
                 img = Image.open(foto_input)
                 img.save(foto_path_guardada)
 
@@ -332,7 +359,7 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
             
             st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
             guardar_datos_excel(st.session_state.incidencias)
-            st.success(f"✅ ¡Reporte #{nuevo_id} ingresado y guardado exitosamente!")
+            st.success(f"✅ ¡Reporte #{nuevo_id} ingresado exitosamente en Vallenar Avanza!")
 
 # ----------------------------------------------------
 # VISTA 2: MAPA Y REPORTES
@@ -340,13 +367,18 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
 elif opcion_menu == "🗺️ Mapa y Reportes":
     df = st.session_state.incidencias
 
+    # Métricas con Tarjetas Visuales Coloridas
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Incidentes", len(df))
-    m2.metric("Pendientes", len(df[df["estado"] == "Pendiente"]))
-    m3.metric("En Proceso", len(df[df["estado"] == "En Proceso"]))
-    m4.metric("Resueltos", len(df[df["estado"] == "Resuelto"]))
+    with m1:
+        st.markdown(f'<div class="metric-card"><div class="metric-val">{len(df)}</div><div class="metric-lbl">Total Incidentes</div></div>', unsafe_allow_html=True)
+    with m2:
+        st.markdown(f'<div class="metric-card pendiente"><div class="metric-val">{len(df[df["estado"] == "Pendiente"])}</div><div class="metric-lbl">Pendientes</div></div>', unsafe_allow_html=True)
+    with m3:
+        st.markdown(f'<div class="metric-card proceso"><div class="metric-val">{len(df[df["estado"] == "En Proceso"])}</div><div class="metric-lbl">En Proceso</div></div>', unsafe_allow_html=True)
+    with m4:
+        st.markdown(f'<div class="metric-card resuelto"><div class="metric-val">{len(df[df["estado"] == "Resuelto"])}</div><div class="metric-lbl">Resueltos</div></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("🔍 Filtros de Búsqueda")
     
     col_f1, col_f2, col_f3 = st.columns(3)
@@ -385,7 +417,12 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
     with col_grafico:
         st.subheader("📊 Distribución por Sector")
         if len(df_filtrado) > 0:
-            fig = px.pie(df_filtrado, names='sector', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set2)
+            fig = px.pie(
+                df_filtrado, 
+                names='sector', 
+                hole=0.4, 
+                color_discrete_sequence=px.colors.qualitative.Teal
+            )
             fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
             st.plotly_chart(fig, use_container_width=True)
         else:
@@ -413,7 +450,7 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
         st.info("No se encontraron reportes con los filtros seleccionados.")
 
 # ----------------------------------------------------
-# VISTA 3: PANEL DE ADMINISTRACIÓN (Con Opción de Eliminar)
+# VISTA 3: PANEL DE ADMINISTRACIÓN (Gestión y Eliminación)
 # ----------------------------------------------------
 elif opcion_menu == "⚙️ Panel de Administración":
     st.subheader("⚙️ Panel de Administración Municipal (Gestión e Informes)")
@@ -431,7 +468,6 @@ elif opcion_menu == "⚙️ Panel de Administración":
             )
             idx = df[df["id"] == rep_id].index[0]
             
-            # Mostrar evidencia en el panel de administración
             foto_admin = str(df.loc[idx, "foto_path"])
             if foto_admin != "Sin foto" and os.path.exists(foto_admin):
                 st.image(foto_admin, caption="Foto adjunta por el vecino", width=300)
@@ -465,14 +501,12 @@ elif opcion_menu == "⚙️ Panel de Administración":
             
             if st.button("❌ Eliminar Reporte", use_container_width=True, type="primary"):
                 if confirmar_borrado:
-                    # 1. Si el reporte tiene foto en disco, la eliminamos
                     if foto_admin != "Sin foto" and os.path.exists(foto_admin):
                         try:
                             os.remove(foto_admin)
                         except Exception:
                             pass
                     
-                    # 2. Eliminar la fila del dataframe en session_state y en Excel
                     st.session_state.incidencias = st.session_state.incidencias[st.session_state.incidencias["id"] != rep_id].reset_index(drop=True)
                     guardar_datos_excel(st.session_state.incidencias)
                     
@@ -516,7 +550,7 @@ elif opcion_menu == "⚙️ Panel de Administración":
 # ----------------------------------------------------
 st.markdown("""
     <div class="footer-card">
-        <h3>🌟 ¡Construyendo juntos el Vallenar que soñamos!</h3>
+        <h3>🚀 ¡Construyendo juntos el Vallenar que avanza!</h3>
         <p>Tu participación ciudadana es el motor clave para transformar y cuidar nuestros barrios.</p>
         <div class="footer-badges">
             <span class="footer-badge-item">🌐 Gestión Territorial</span>
