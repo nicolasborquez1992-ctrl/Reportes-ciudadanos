@@ -15,11 +15,11 @@ import os
 # Librerías para generación de PDF
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
 # ----------------------------------------------------
-# Configuración Inicial de la Página
+# Configuración Inicial y Carpeta de Fotos
 # ----------------------------------------------------
 st.set_page_config(
     page_title="Vallenar Resuelve - Gestión Territorial y Atención Ciudadana",
@@ -27,10 +27,15 @@ st.set_page_config(
     layout="wide"
 )
 
+# Crear la carpeta para guardar fotos reportadas si no existe
+CARPETA_FOTOS = "fotos_reportes"
+if not os.path.exists(CARPETA_FOTOS):
+    os.makedirs(CARPETA_FOTOS)
+
 # URL del logo de Vallenar
 URL_LOGO_VALLENAR = "https://upload.wikimedia.org/wikipedia/commons/2/27/Escudo_de_Vallenar.svg"
 
-# CSS Personalizado (Adaptable a Modo Claro y Oscuro)
+# CSS Personalizado
 st.markdown("""
     <style>
     .main-title { 
@@ -63,7 +68,6 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* Pie de página moderno y atractivo */
     .footer-card {
         background: linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #0369A1 100%);
         color: white;
@@ -117,6 +121,8 @@ def cargar_datos_excel():
             df = pd.read_excel(EXCEL_FILE)
             if "obs_municipal" not in df.columns:
                 df["obs_municipal"] = "En espera de revisión."
+            if "foto_path" not in df.columns:
+                df["foto_path"] = "Sin foto"
             return df
         except Exception:
             pass
@@ -133,7 +139,8 @@ def cargar_datos_excel():
             "comentario": "Evento de gran profundidad cerca de la escuela.",
             "prioridad": "Alta",
             "contacto": "vecino.torreblanca@gmail.com",
-            "obs_municipal": "Asignado a cuadrilla de obras."
+            "obs_municipal": "Asignado a cuadrilla de obras.",
+            "foto_path": "Sin foto"
         },
         {
             "id": 2,
@@ -146,7 +153,8 @@ def cargar_datos_excel():
             "comentario": "Luminaria apagada en calle Prat.",
             "prioridad": "Media",
             "contacto": "comercio.centro@vallenar.cl",
-            "obs_municipal": "Repuestos solicitados en bodega."
+            "obs_municipal": "Repuestos solicitados en bodega.",
+            "foto_path": "Sin foto"
         }
     ]
     df = pd.DataFrame(data_inicial)
@@ -160,12 +168,12 @@ def guardar_datos_excel(df):
     try:
         df.to_excel(EXCEL_FILE, index=False)
     except Exception as e:
-        st.error(f"Error al guardar datos en Excel: {e}. Asegúrate de tener instalada la librería 'openpyxl'.")
+        st.error(f"Error al guardar datos en Excel: {e}")
 
 if "incidencias" not in st.session_state:
     st.session_state.incidencias = cargar_datos_excel()
 
-sectores_vallenar = ["Centro", "Torreblanca", "Hda ventanas", "Hda cavancha", "Las Pircas", "Hda buena esperanza", "Regidores", "Vista alegre", "Hda compañia", "Altos del valle", "San Ambrosio", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
@@ -234,7 +242,7 @@ def generar_pdf_gestion(df_data):
     return buffer
 
 # ----------------------------------------------------
-# Encabezado Principal (Con Logo Institucional)
+# Encabezado Principal
 # ----------------------------------------------------
 col_logo, col_encabezado, col_menu = st.columns([0.4, 1.4, 1])
 
@@ -263,7 +271,7 @@ with col_menu:
 st.markdown("---")
 
 # ----------------------------------------------------
-# VISTA 1: CREAR NUEVO REPORTE
+# VISTA 1: CREAR NUEVO REPORTE (Guardado de Foto)
 # ----------------------------------------------------
 if opcion_menu == "📝 Crear Nuevo Reporte":
     st.subheader("📝 Formulario de Reporte Ciudadano")
@@ -286,7 +294,7 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
 
     comentario_input = st.text_area("Descripción detallada de la incidencia:")
     contacto_input = st.text_input("Correo electrónico del vecino:", placeholder="ejemplo@correo.cl")
-    foto_input = st.file_uploader("Adjuntar Foto / Evidencia (Máx 200MB):", type=["jpg", "png", "jpeg"])
+    foto_input = st.file_uploader("Adjuntar Foto / Evidencia (JPG, PNG):", type=["jpg", "png", "jpeg"])
 
     if st.button("🚀 Enviar Reporte a la Municipalidad", use_container_width=True):
         if comentario_input.strip() == "":
@@ -294,6 +302,17 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
         else:
             nuevo_id = len(st.session_state.incidencias) + 1
             
+            # Guardar la foto físicamente si el usuario la subió
+            foto_path_guardada = "Sin foto"
+            if foto_input is not None:
+                ext = foto_input.name.split(".")[-1]
+                nombre_archivo = f"reporte_{nuevo_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+                foto_path_guardada = os.path.join(CARPETA_FOTOS, nombre_archivo)
+                
+                # Guardar imagen en disco
+                img = Image.open(foto_input)
+                img.save(foto_path_guardada)
+
             nueva_fila = pd.DataFrame([{
                 "id": nuevo_id,
                 "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -305,7 +324,8 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
                 "comentario": comentario_input,
                 "prioridad": prioridad_input,
                 "contacto": contacto_input.strip() if contacto_input.strip() != "" else "No especificado",
-                "obs_municipal": "En espera de revisión."
+                "obs_municipal": "En espera de revisión.",
+                "foto_path": foto_path_guardada
             }])
             
             st.session_state.incidencias = pd.concat([st.session_state.incidencias, nueva_fila], ignore_index=True)
@@ -313,7 +333,7 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
             st.success(f"✅ ¡Reporte #{nuevo_id} ingresado y guardado exitosamente!")
 
 # ----------------------------------------------------
-# VISTA 2: MAPA Y REPORTES
+# VISTA 2: MAPA Y REPORTES (Visualización de Fotos)
 # ----------------------------------------------------
 elif opcion_menu == "🗺️ Mapa y Reportes":
     df = st.session_state.incidencias
@@ -374,9 +394,19 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
     if len(df_filtrado) > 0:
         for _, row in df_filtrado.iloc[::-1].iterrows():
             with st.expander(f"📍 Folio #{row['id']} - {row['categoria']} ({row['sector']}) — Estado: [{row['estado']}]"):
-                st.write(f"*Urgencia:* {row['prioridad']} | *Fecha:* {row['fecha']}")
-                st.info(f"*Descripción del Vecino:* {row['comentario']}")
-                st.success(f"*Respuesta Municipal:* {row.get('obs_municipal', 'En espera de revisión.')}")
+                col_text, col_img = st.columns([2, 1])
+                
+                with col_text:
+                    st.write(f"**Urgencia:** {row['prioridad']} | **Fecha:** {row['fecha']}")
+                    st.info(f"**Descripción del Vecino:** {row['comentario']}")
+                    st.success(f"**Respuesta Municipal:** {row.get('obs_municipal', 'En espera de revisión.')}")
+                
+                with col_img:
+                    foto_path = str(row.get("foto_path", "Sin foto"))
+                    if foto_path != "Sin foto" and os.path.exists(foto_path):
+                        st.image(foto_path, caption=f"Evidencia Folio #{row['id']}", use_container_width=True)
+                    else:
+                        st.caption("📷 Sin fotografía adjunta")
 
 # ----------------------------------------------------
 # VISTA 3: PANEL DE ADMINISTRACIÓN
@@ -397,6 +427,11 @@ elif opcion_menu == "⚙️ Panel de Administración":
             )
             idx = df[df["id"] == rep_id].index[0]
             
+            # Mostrar evidencia en la administración
+            foto_admin = str(df.loc[idx, "foto_path"])
+            if foto_admin != "Sin foto" and os.path.exists(foto_admin):
+                st.image(foto_admin, caption="Foto adjunta por el vecino", width=300)
+
             nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
             nueva_obs = st.text_input("Observación Interna / Respuesta al Vecino:", value=str(df.loc[idx, "obs_municipal"]))
                 
@@ -441,7 +476,7 @@ elif opcion_menu == "⚙️ Panel de Administración":
         st.error("❌ Clave de acceso incorrecta")
 
 # ----------------------------------------------------
-# Pie de Página Renovado y Llamativo en Español
+# Pie de Página
 # ----------------------------------------------------
 st.markdown("""
     <div class="footer-card">
