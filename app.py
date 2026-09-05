@@ -271,7 +271,7 @@ with col_menu:
 st.markdown("---")
 
 # ----------------------------------------------------
-# VISTA 1: CREAR NUEVO REPORTE (Guardado de Foto)
+# VISTA 1: CREAR NUEVO REPORTE
 # ----------------------------------------------------
 if opcion_menu == "📝 Crear Nuevo Reporte":
     st.subheader("📝 Formulario de Reporte Ciudadano")
@@ -300,7 +300,9 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
         if comentario_input.strip() == "":
             st.warning("Por favor agrega una breve descripción del problema.")
         else:
-            nuevo_id = len(st.session_state.incidencias) + 1
+            # Generar un ID único autoincremental
+            df_actual = st.session_state.incidencias
+            nuevo_id = int(df_actual["id"].max() + 1) if len(df_actual) > 0 else 1
             
             # Guardar la foto físicamente si el usuario la subió
             foto_path_guardada = "Sin foto"
@@ -333,7 +335,7 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
             st.success(f"✅ ¡Reporte #{nuevo_id} ingresado y guardado exitosamente!")
 
 # ----------------------------------------------------
-# VISTA 2: MAPA Y REPORTES (Visualización de Fotos)
+# VISTA 2: MAPA Y REPORTES
 # ----------------------------------------------------
 elif opcion_menu == "🗺️ Mapa y Reportes":
     df = st.session_state.incidencias
@@ -407,9 +409,11 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
                         st.image(foto_path, caption=f"Evidencia Folio #{row['id']}", use_container_width=True)
                     else:
                         st.caption("📷 Sin fotografía adjunta")
+    else:
+        st.info("No se encontraron reportes con los filtros seleccionados.")
 
 # ----------------------------------------------------
-# VISTA 3: PANEL DE ADMINISTRACIÓN
+# VISTA 3: PANEL DE ADMINISTRACIÓN (Con Opción de Eliminar)
 # ----------------------------------------------------
 elif opcion_menu == "⚙️ Panel de Administración":
     st.subheader("⚙️ Panel de Administración Municipal (Gestión e Informes)")
@@ -421,19 +425,24 @@ elif opcion_menu == "⚙️ Panel de Administración":
         
         if len(df) > 0:
             rep_id = st.selectbox(
-                "Gestionar Incidencia:", 
+                "Gestionar / Eliminar Incidencia:", 
                 options=df["id"].tolist(), 
                 format_func=lambda x: f"Folio #{x} - {df[df['id']==x]['categoria'].values[0]} ({df[df['id']==x]['sector'].values[0]})"
             )
             idx = df[df["id"] == rep_id].index[0]
             
-            # Mostrar evidencia en la administración
+            # Mostrar evidencia en el panel de administración
             foto_admin = str(df.loc[idx, "foto_path"])
             if foto_admin != "Sin foto" and os.path.exists(foto_admin):
                 st.image(foto_admin, caption="Foto adjunta por el vecino", width=300)
 
-            nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
-            nueva_obs = st.text_input("Observación Interna / Respuesta al Vecino:", value=str(df.loc[idx, "obs_municipal"]))
+            # --- SECCIÓN 1: ACTUALIZAR ESTADO Y RESPUESTA ---
+            st.markdown("#### ✏️ Editar Estado y Respuesta")
+            col_edit1, col_edit2 = st.columns([1, 2])
+            with col_edit1:
+                nuevo_estado = st.selectbox("Cambiar Estado:", ["Pendiente", "En Proceso", "Resuelto"], index=["Pendiente", "En Proceso", "Resuelto"].index(df.loc[idx, "estado"]))
+            with col_edit2:
+                nueva_obs = st.text_input("Observación Interna / Respuesta al Vecino:", value=str(df.loc[idx, "obs_municipal"]))
                 
             if st.button("💾 Actualizar y Guardar Cambios en Excel", use_container_width=True):
                 st.session_state.incidencias.loc[idx, "estado"] = nuevo_estado
@@ -447,6 +456,33 @@ elif opcion_menu == "⚙️ Panel de Administración":
                 
                 st.success(f"✅ Reporte #{rep_id} actualizado con éxito.")
                 st.rerun()
+
+            st.markdown("---")
+
+            # --- SECCIÓN 2: ELIMINAR REPORTE ---
+            st.markdown("#### 🗑️ Eliminar Reporte")
+            confirmar_borrado = st.checkbox(f"⚠️ Confirmar que deseas eliminar permanentemente el reporte Folio #{rep_id}")
+            
+            if st.button("❌ Eliminar Reporte", use_container_width=True, type="primary"):
+                if confirmar_borrado:
+                    # 1. Si el reporte tiene foto en disco, la eliminamos
+                    if foto_admin != "Sin foto" and os.path.exists(foto_admin):
+                        try:
+                            os.remove(foto_admin)
+                        except Exception:
+                            pass
+                    
+                    # 2. Eliminar la fila del dataframe en session_state y en Excel
+                    st.session_state.incidencias = st.session_state.incidencias[st.session_state.incidencias["id"] != rep_id].reset_index(drop=True)
+                    guardar_datos_excel(st.session_state.incidencias)
+                    
+                    st.success(f"🗑️ El reporte Folio #{rep_id} ha sido eliminado permanentemente.")
+                    st.rerun()
+                else:
+                    st.warning("Por favor marca la casilla de confirmación antes de presionar Eliminar.")
+
+        else:
+            st.info("No hay reportes ingresados actualmente para gestionar.")
 
         st.markdown("---")
         st.subheader("📊 Descargas y Reportes Oficiales")
