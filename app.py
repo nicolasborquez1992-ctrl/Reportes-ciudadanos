@@ -203,7 +203,7 @@ def guardar_datos_excel(df):
 if "incidencias" not in st.session_state:
     st.session_state.incidencias = cargar_datos_excel()
 
-sectores_vallenar = ["Centro", "Torreblanca", "Hda ventanas", "Hda cavancha", "Las Pircas", "Hda buena esperanza", "Regidores", "Vista alegre", "Hda compañia", "Altos del valle", "San Ambrosio", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
+sectores_vallenar = ["Centro", "Torreblanca", "Baquedano", "Quinta Valle", "Ventanas", "O'Higgins", "Hermanos Carrera", "Otro Sector"]
 
 # ----------------------------------------------------
 # Módulo 1: Envío de Notificaciones por Correo
@@ -421,7 +421,7 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
                 df_filtrado, 
                 names='sector', 
                 hole=0.4, 
-                color_discrete_sequence=px.colors.qualitative.Teal
+                color_discrete_sequence=px.colors.qualitative.Set2
             )
             fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
             st.plotly_chart(fig, use_container_width=True)
