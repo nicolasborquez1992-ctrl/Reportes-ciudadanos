@@ -4,7 +4,7 @@ import folium
 from streamlit_folium import st_folium
 import plotly.express as px
 from datetime import datetime
-from PIL import Image
+from PIL import Image as PILImage  # ALIAS para evitar conflicto con ReportLab
 from streamlit_js_eval import get_geolocation
 import smtplib
 from email.mime.text import MIMEText
@@ -14,7 +14,7 @@ import os
 
 # Librerías para generación de PDF
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage # IMPORTANTE: Image de ReportLab
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
@@ -35,10 +35,9 @@ if not os.path.exists(CARPETA_FOTOS):
 # URL del logo de Vallenar
 URL_LOGO_VALLENAR = "https://upload.wikimedia.org/wikipedia/commons/2/27/Escudo_de_Vallenar.svg"
 
-# CSS Personalizado Mejorado y con más Color
+# CSS Personalizado
 st.markdown("""
     <style>
-    /* Estilo del Título Principal */
     .main-title { 
         font-size: 2.3rem; 
         font-weight: 800; 
@@ -66,14 +65,10 @@ st.markdown("""
         letter-spacing: 0.5px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    
-    /* Personalización de Selectbox e Inputs */
     div[data-baseweb="select"] {
         border: 2px solid #0D9488 !important;
         border-radius: 8px !important;
     }
-    
-    /* Tarjetas de Métricas Personalizadas */
     .metric-card {
         background: white;
         border-radius: 12px;
@@ -85,7 +80,6 @@ st.markdown("""
     .metric-card.pendiente { border-left-color: #EF4444; }
     .metric-card.proceso { border-left-color: #F59E0B; }
     .metric-card.resuelto { border-left-color: #10B981; }
-    
     .metric-val {
         font-size: 1.8rem;
         font-weight: 800;
@@ -96,8 +90,6 @@ st.markdown("""
         color: #6B7280;
         font-weight: 600;
     }
-
-    /* Footer Estilizado */
     .footer-card {
         background: linear-gradient(135deg, #1E3A8A 0%, #0D9488 100%);
         color: white;
@@ -241,7 +233,7 @@ def enviar_correo_notificacion(destinatario, id_reporte, nuevo_estado, categoria
         return False, str(e)
 
 # ----------------------------------------------------
-# Módulo 2: Generador de Informes PDF
+# Módulo 2: Generador de Informes PDF (MODIFICADO)
 # ----------------------------------------------------
 def generar_pdf_gestion(df_data):
     buffer = io.BytesIO()
@@ -254,15 +246,37 @@ def generar_pdf_gestion(df_data):
     story.append(Paragraph(f"Fecha de emisión: {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
     story.append(Spacer(1, 15))
 
-    table_data = [["Folio", "Fecha", "Sector", "Categoría", "Estado"]]
+    # Agregamos la columna 'Evidencia' a la cabecera
+    table_data = [["Folio", "Fecha", "Sector", "Categoría", "Estado", "Evidencia"]]
+    
     for _, row in df_data.iterrows():
-        table_data.append([f"#{row['id']}", str(row["fecha"]), str(row["sector"]), str(row["categoria"]), str(row["estado"])])
+        foto_path = str(row.get("foto_path", "Sin foto"))
+        img_cell = "Sin Foto"
+        
+        # Verificar si existe la imagen para incrustarla
+        if foto_path != "Sin foto" and os.path.exists(foto_path):
+            try:
+                # Cargar y redimensionar la imagen a 50x50 px para la tabla
+                img_cell = RLImage(foto_path, width=50, height=50)
+            except Exception:
+                img_cell = "Error al cargar"
 
-    t = Table(table_data, colWidths=[40, 70, 90, 190, 80])
+        table_data.append([
+            f"#{row['id']}", 
+            str(row["fecha"]), 
+            str(row["sector"]), 
+            str(row["categoria"]), 
+            str(row["estado"]),
+            img_cell
+        ])
+
+    # Se ajustaron los anchos de columna para que quepa la imagen (Total ~470 px)
+    t = Table(table_data, colWidths=[40, 65, 80, 155, 70, 60])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0D9488")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # Alineación vertical al centro
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#D1D5DB")),
     ]))
     
@@ -336,10 +350,10 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
             foto_path_guardada = "Sin foto"
             if foto_input is not None:
                 ext = foto_input.name.split(".")[-1]
-                nombre_archivo = f"reporte_{nuevo_id}{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+                nombre_archivo = f"reporte_{nuevo_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
                 foto_path_guardada = os.path.join(CARPETA_FOTOS, nombre_archivo)
                 
-                img = Image.open(foto_input)
+                img = PILImage.open(foto_input)
                 img.save(foto_path_guardada)
 
             nueva_fila = pd.DataFrame([{
@@ -367,7 +381,6 @@ if opcion_menu == "📝 Crear Nuevo Reporte":
 elif opcion_menu == "🗺️ Mapa y Reportes":
     df = st.session_state.incidencias
 
-    # Métricas con Tarjetas Visuales Coloridas
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.markdown(f'<div class="metric-card"><div class="metric-val">{len(df)}</div><div class="metric-lbl">Total Incidentes</div></div>', unsafe_allow_html=True)
@@ -450,7 +463,7 @@ elif opcion_menu == "🗺️ Mapa y Reportes":
         st.info("No se encontraron reportes con los filtros seleccionados.")
 
 # ----------------------------------------------------
-# VISTA 3: PANEL DE ADMINISTRACIÓN (Gestión y Eliminación)
+# VISTA 3: PANEL DE ADMINISTRACIÓN
 # ----------------------------------------------------
 elif opcion_menu == "⚙️ Panel de Administración":
     st.subheader("⚙️ Panel de Administración Municipal (Gestión e Informes)")
@@ -472,7 +485,7 @@ elif opcion_menu == "⚙️ Panel de Administración":
             if foto_admin != "Sin foto" and os.path.exists(foto_admin):
                 st.image(foto_admin, caption="Foto adjunta por el vecino", width=300)
 
-            # --- SECCIÓN 1: ACTUALIZAR ESTADO Y RESPUESTA ---
+            # EDITAR ESTADO
             st.markdown("#### ✏️ Editar Estado y Respuesta")
             col_edit1, col_edit2 = st.columns([1, 2])
             with col_edit1:
@@ -495,7 +508,7 @@ elif opcion_menu == "⚙️ Panel de Administración":
 
             st.markdown("---")
 
-            # --- SECCIÓN 2: ELIMINAR REPORTE ---
+            # ELIMINAR REPORTE
             st.markdown("#### 🗑️ Eliminar Reporte")
             confirmar_borrado = st.checkbox(f"⚠️ Confirmar que deseas eliminar permanentemente el reporte Folio #{rep_id}")
             
